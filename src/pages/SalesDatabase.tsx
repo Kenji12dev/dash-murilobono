@@ -61,6 +61,7 @@ const SalesDatabase = () => {
       clientName: sale.clientName,
       product: sale.product,
       grossValue: sale.grossValue,
+      downPayment: sale.downPayment,
       paymentMethod: sale.paymentMethod,
       closer: sale.closer,
       sdr: sale.sdr,
@@ -144,6 +145,7 @@ const SalesDatabase = () => {
                     <th className="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Cliente</th>
                     <th className="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Produto</th>
                     <th className="text-right px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Bruto</th>
+                    <th className="text-right px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Entrada</th>
                     <th className="text-right px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Líquido</th>
                     <th className="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Pagamento</th>
                     <th className="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Closer</th>
@@ -187,6 +189,19 @@ const SalesDatabase = () => {
                             className="h-8 bg-secondary border-border text-sm w-24 text-right"
                           />
                         ) : `R$ ${s.grossValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
+                      </td>
+                      <td className="px-5 py-3.5 text-right text-muted-foreground whitespace-nowrap">
+                        {editingId === s.id && (editData.paymentMethod || s.paymentMethod) === "TMB" ? (
+                          <Input
+                            type="number"
+                            value={editData.downPayment ?? ""}
+                            onChange={(e) => setEditData({ ...editData, downPayment: parseFloat(e.target.value) || 0 })}
+                            className="h-8 bg-secondary border-border text-sm w-24 text-right"
+                            placeholder="Entrada"
+                          />
+                        ) : s.paymentMethod === "TMB" && s.downPayment != null
+                          ? `R$ ${s.downPayment.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
+                          : "—"}
                       </td>
                       <td className="px-5 py-3.5 text-right text-foreground font-medium whitespace-nowrap">
                         {editingId === s.id
@@ -296,7 +311,7 @@ const SalesDatabase = () => {
                 </tbody>
                 <tfoot>
                   <tr className="border-t border-border">
-                    <td colSpan={4} className="px-5 py-3.5 text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <td colSpan={5} className="px-5 py-3.5 text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                       Total Líquido
                     </td>
                     <td className="px-5 py-3.5 text-right font-bold text-foreground whitespace-nowrap">

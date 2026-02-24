@@ -13,6 +13,7 @@ export interface Sale {
   sdr: string;
   status: string;
   leadSource: string;
+  downPayment?: number;
   notes: string;
 }
 
