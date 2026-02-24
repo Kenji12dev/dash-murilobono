@@ -29,11 +29,12 @@ import { toast } from "sonner";
 const statusColors: Record<string, string> = {
   Pago: "text-success",
   Pendente: "text-warning",
-  Cancelado: "text-destructive",
+  "Follow Up": "text-blue-500",
+  Loss: "text-destructive",
   Reembolsado: "text-muted-foreground",
 };
 
-const statuses = ["Pago", "Pendente", "Cancelado", "Reembolsado"];
+const statuses = ["Pago", "Pendente", "Follow Up", "Loss", "Reembolsado"];
 
 const SalesDatabase = () => {
   const { sales, deleteSale, updateSale, products, closers, sdrs } = useSales();
@@ -129,7 +130,8 @@ const SalesDatabase = () => {
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="Pago">Pago</SelectItem>
                 <SelectItem value="Pendente">Pendente</SelectItem>
-                <SelectItem value="Cancelado">Cancelado</SelectItem>
+                <SelectItem value="Follow Up">Follow Up</SelectItem>
+                <SelectItem value="Loss">Loss</SelectItem>
                 <SelectItem value="Reembolsado">Reembolsado</SelectItem>
               </SelectContent>
             </Select>

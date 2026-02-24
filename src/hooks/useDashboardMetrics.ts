@@ -27,7 +27,8 @@ export interface DashboardMetrics {
 const STATUS_COLORS: Record<string, string> = {
   Pago: CHART_COLORS[3],
   Pendente: CHART_COLORS[5],
-  Cancelado: CHART_COLORS[6],
+  "Follow Up": CHART_COLORS[1],
+  Loss: CHART_COLORS[6],
   Reembolsado: CHART_COLORS[8],
 };
 

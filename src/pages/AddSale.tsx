@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/popover";
 import { toast } from "sonner";
 
-const statuses = ["Pago", "Pendente", "Cancelado", "Reembolsado"];
+const statuses = ["Pago", "Pendente", "Follow Up", "Loss", "Reembolsado"];
 
 const AddSale = () => {
   const { addSale, products, closers, sdrs } = useSales();
@@ -457,7 +457,8 @@ const AddSale = () => {
                       "font-medium",
                       status === "Pago" && "text-success",
                       status === "Pendente" && "text-warning",
-                      status === "Cancelado" && "text-destructive",
+                      status === "Follow Up" && "text-blue-500",
+                      status === "Loss" && "text-destructive",
                       status === "Reembolsado" && "text-muted-foreground"
                     )}>
                       {status}
