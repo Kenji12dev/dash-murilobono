@@ -52,6 +52,7 @@ const Collaborators = () => {
   // Edit dialog
   const [editCollab, setEditCollab] = useState<Collaborator | null>(null);
   const [editRate, setEditRate] = useState("");
+  const [editFixedSalary, setEditFixedSalary] = useState("");
 
   // Add user dialog
   const [addOpen, setAddOpen] = useState(false);
@@ -91,14 +92,19 @@ const Collaborators = () => {
       toast.error("Taxa inválida (0-100%)");
       return;
     }
+    const salary = parseFloat(editFixedSalary) || 0;
+    if (salary < 0) {
+      toast.error("Salário fixo inválido");
+      return;
+    }
     const { error } = await supabase
       .from("collaborators")
-      .update({ commission_rate: rate })
+      .update({ commission_rate: rate, fixed_salary: salary })
       .eq("id", editCollab.id);
     if (error) {
       toast.error("Erro ao atualizar: " + error.message);
     } else {
-      toast.success("Taxa atualizada!");
+      toast.success("Dados atualizados!");
       setEditCollab(null);
       fetchCollaborators();
     }
@@ -230,6 +236,7 @@ const Collaborators = () => {
                           onClick={() => {
                             setEditCollab(c);
                             setEditRate(String(c.commission_rate * 100));
+                            setEditFixedSalary(String(c.fixed_salary));
                           }}
                         >
                           <Pencil className="h-4 w-4" />
@@ -276,6 +283,7 @@ const Collaborators = () => {
                         onClick={() => {
                           setEditCollab(c);
                           setEditRate(String(c.commission_rate * 100));
+                          setEditFixedSalary(String(c.fixed_salary));
                         }}
                       >
                         <Pencil className="h-4 w-4" />
@@ -289,11 +297,11 @@ const Collaborators = () => {
         </div>
       </div>
 
-      {/* Edit commission dialog */}
+      {/* Edit collaborator dialog */}
       <Dialog open={!!editCollab} onOpenChange={(open) => !open && setEditCollab(null)}>
         <DialogContent className="max-w-xs">
           <DialogHeader>
-            <DialogTitle>Editar Comissão</DialogTitle>
+            <DialogTitle>Editar Colaborador</DialogTitle>
             <DialogDescription>{editCollab?.name}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
@@ -306,6 +314,16 @@ const Collaborators = () => {
                 step="1"
                 value={editRate}
                 onChange={(e) => setEditRate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground">Salário Fixo (R$)</Label>
+              <Input
+                type="number"
+                min="0"
+                step="100"
+                value={editFixedSalary}
+                onChange={(e) => setEditFixedSalary(e.target.value)}
               />
             </div>
             <Button onClick={handleEditSave} className="w-full">
