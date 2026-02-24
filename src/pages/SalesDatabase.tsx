@@ -42,17 +42,28 @@ const SalesDatabase = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<Sale>>({});
 
-  const filtered = sales.filter((s) => {
-    const matchesSearch =
-      !search ||
-      s.clientName.toLowerCase().includes(search.toLowerCase()) ||
-      s.product.toLowerCase().includes(search.toLowerCase()) ||
-      s.closer.toLowerCase().includes(search.toLowerCase()) ||
-      s.sdr.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "all" || s.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Reset page when filters change
+  const handleSearch = (v: string) => { setSearch(v); setCurrentPage(1); };
+  const handleStatusFilter = (v: string) => { setStatusFilter(v); setCurrentPage(1); };
 
+  const ITEMS_PER_PAGE = 20;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const filtered = sales
+    .filter((s) => {
+      const matchesSearch =
+        !search ||
+        s.clientName.toLowerCase().includes(search.toLowerCase()) ||
+        s.product.toLowerCase().includes(search.toLowerCase()) ||
+        s.closer.toLowerCase().includes(search.toLowerCase()) ||
+        s.sdr.toLowerCase().includes(search.toLowerCase());
+      const matchesStatus = statusFilter === "all" || s.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
   const totalNet = filtered.reduce((sum, s) => sum + s.netValue, 0);
 
   const startEdit = (sale: Sale) => {
@@ -105,12 +116,12 @@ const SalesDatabase = () => {
               <Input
                 placeholder="Buscar cliente, produto, closer..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => handleSearch(e.target.value)}
                 className="pl-9 bg-secondary border-border w-64"
                 maxLength={100}
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={handleStatusFilter}>
               <SelectTrigger className="bg-secondary border-border w-40">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -156,7 +167,7 @@ const SalesDatabase = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((s) => (
+                  {paginated.map((s) => (
                     <tr key={s.id} className="border-b border-border/50 hover:bg-secondary/40 transition-colors">
                       <td className="px-5 py-3.5 text-muted-foreground whitespace-nowrap">
                         {format(new Date(s.date), "dd/MM/yyyy", { locale: ptBR })}
@@ -324,6 +335,28 @@ const SalesDatabase = () => {
             </div>
           )}
         </div>
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 pt-2">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 text-sm rounded-md bg-secondary text-foreground disabled:opacity-40 hover:bg-secondary/80 transition-colors"
+            >
+              Anterior
+            </button>
+            <span className="text-sm text-muted-foreground">
+              Página {currentPage} de {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 text-sm rounded-md bg-secondary text-foreground disabled:opacity-40 hover:bg-secondary/80 transition-colors"
+            >
+              Próxima
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
