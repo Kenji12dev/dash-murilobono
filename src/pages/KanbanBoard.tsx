@@ -34,8 +34,9 @@ import { Calendar } from "@/components/ui/calendar";
 
 const statusColumns = [
   { id: "Pendente", label: "Agendado / Pendente", color: "border-yellow-500/60 bg-yellow-500/5" },
+  { id: "Follow Up", label: "Follow Up", color: "border-blue-500/60 bg-blue-500/5" },
   { id: "Pago", label: "Pago", color: "border-emerald-500/60 bg-emerald-500/5" },
-  { id: "Cancelado", label: "Cancelado", color: "border-red-500/60 bg-red-500/5" },
+  { id: "Loss", label: "Loss", color: "border-red-500/60 bg-red-500/5" },
   { id: "Reembolsado", label: "Reembolsado", color: "border-zinc-500/60 bg-zinc-500/5" },
 ];
 
@@ -86,11 +87,17 @@ const KanbanBoard = () => {
     if (!draggedId) return;
     const sale = sales.find((s) => s.id === draggedId);
     if (sale && sale.status !== targetStatus) {
-      // Open move dialog so user can fill value/payment
-      setMoveDialog({ saleId: draggedId, targetStatus });
-      setMoveGross(sale.grossValue > 0 ? String(sale.grossValue) : "");
-      setMovePayment(sale.paymentMethod || "");
-      setMoveDownPayment(sale.downPayment ? String(sale.downPayment) : "");
+      // Loss doesn't need value/payment — move directly
+      if (targetStatus === "Loss") {
+        updateSale(draggedId, { status: "Loss" });
+        toast.success("Venda movida para Loss");
+      } else {
+        // Open move dialog so user can fill value/payment
+        setMoveDialog({ saleId: draggedId, targetStatus });
+        setMoveGross(sale.grossValue > 0 ? String(sale.grossValue) : "");
+        setMovePayment(sale.paymentMethod || "");
+        setMoveDownPayment(sale.downPayment ? String(sale.downPayment) : "");
+      }
     }
     setDraggedId(null);
     setDragOverColId(null);
@@ -215,7 +222,7 @@ const KanbanBoard = () => {
           onEndDateChange={setEndDate}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
           {statusColumns.map((col) => {
             const items = salesByStatus(col.id);
             return (
