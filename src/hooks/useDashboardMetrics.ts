@@ -22,6 +22,8 @@ export interface DashboardMetrics {
   paymentData: { name: string; value: number; percentage: number; color: string }[];
   statusData: { name: string; count: number; percentage: number; color: string }[];
   leadSourceData: { name: string; value: number; percentage: number; color: string }[];
+  callStatusByCloser: Record<string, { name: string; count: number; color: string }[]>;
+  closersList: string[];
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -152,6 +154,23 @@ export const useDashboardMetrics = (
       color: LEAD_SOURCE_MAP[source]?.color || CHART_COLORS[0],
     }));
 
+    // Call status grouped by closer
+    const closerStatusMap = new Map<string, Map<string, number>>();
+    statusFiltered.forEach((s) => {
+      if (!closerStatusMap.has(s.closer)) closerStatusMap.set(s.closer, new Map());
+      const inner = closerStatusMap.get(s.closer)!;
+      inner.set(s.status, (inner.get(s.status) || 0) + 1);
+    });
+    const callStatusByCloser: Record<string, { name: string; count: number; color: string }[]> = {};
+    closerStatusMap.forEach((statusMap, closer) => {
+      callStatusByCloser[closer] = Array.from(statusMap.entries()).map(([name, count]) => ({
+        name,
+        count,
+        color: STATUS_COLORS[name] || CHART_COLORS[0],
+      }));
+    });
+    const closersList = Array.from(closerStatusMap.keys()).sort();
+
     return {
       faturamentoLiquido,
       caixaGerado,
@@ -163,6 +182,8 @@ export const useDashboardMetrics = (
       paymentData,
       statusData,
       leadSourceData,
+      callStatusByCloser,
+      closersList,
     };
   }, [sales, startDate, endDate, filters]);
 };
