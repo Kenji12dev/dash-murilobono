@@ -41,6 +41,7 @@ const AddSale = () => {
   const [sdr, setSdr] = useState("");
   const [status, setStatus] = useState("");
   const [leadSource, setLeadSource] = useState("");
+  const [downPayment, setDownPayment] = useState("");
   const [notes, setNotes] = useState("");
 
   const gross = parseFloat(grossValue) || 0;
@@ -64,6 +65,7 @@ const AddSale = () => {
     setSdr("");
     setStatus("");
     setLeadSource("");
+    setDownPayment("");
     setNotes("");
   };
 
@@ -84,6 +86,7 @@ const AddSale = () => {
       sdr,
       status,
       leadSource,
+      downPayment: paymentMethod === "TMB" && downPayment ? parseFloat(downPayment) : undefined,
       notes: notes.trim(),
     });
 
@@ -195,8 +198,30 @@ const AddSale = () => {
                       <SelectItem key={m} value={m}>{m} <span className="text-muted-foreground ml-1">({getFeeDescription(m)})</span></SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
+              </Select>
               </div>
+
+              {/* Valor de Entrada (TMB only) */}
+              {paymentMethod === "TMB" && (
+              <div className="space-y-2">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                  Valor de Entrada (1ª parcela)
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={downPayment}
+                    onChange={(e) => setDownPayment(e.target.value)}
+                    className="bg-secondary border-border pl-10"
+                  />
+                </div>
+                <p className="text-[11px] text-muted-foreground">Valor que entra no caixa (boleto)</p>
+              </div>
+              )}
 
               {/* Closer */}
               <div className="space-y-2">
@@ -354,6 +379,14 @@ const AddSale = () => {
                     R$ {calculatedNet.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                   </span>
                 </div>
+                {paymentMethod === "TMB" && downPayment && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Entrada (Caixa)</span>
+                  <span className="font-semibold text-foreground">
+                    R$ {(parseFloat(downPayment) || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                )}
                 <div className="h-px bg-border my-2" />
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Margem Líquida</span>

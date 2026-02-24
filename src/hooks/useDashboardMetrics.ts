@@ -76,7 +76,13 @@ export const useDashboardMetrics = (
     const filteredSales = applyFilters(dateFiltered).filter((s) => s.status === "Pago");
 
     const faturamentoLiquido = filteredSales.reduce((sum, s) => sum + s.netValue, 0);
-    const caixaGerado = filteredSales.reduce((sum, s) => sum + s.grossValue, 0);
+    const caixaGerado = filteredSales.reduce((sum, s) => {
+      // For TMB sales with a down payment, use down payment as cash generated
+      if (s.paymentMethod === "TMB" && s.downPayment != null) {
+        return sum + s.downPayment;
+      }
+      return sum + s.grossValue;
+    }, 0);
     const quantidadeVendas = filteredSales.length;
     const ticketMedio = quantidadeVendas > 0 ? faturamentoLiquido / quantidadeVendas : 0;
 
