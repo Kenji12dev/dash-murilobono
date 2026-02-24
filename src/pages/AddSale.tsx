@@ -4,7 +4,7 @@ import { ptBR } from "date-fns/locale";
 import { CalendarIcon, Save, X, DollarSign, Users, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSales } from "@/context/SalesContext";
-import { PAYMENT_METHODS, calculateNetValue, getFeeDescription } from "@/data/mockData";
+import { PAYMENT_METHODS, calculateNetValue, getFeeDescription, getCloserCommissionRate, SDR_COMMISSION_RATE } from "@/data/mockData";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -47,8 +47,9 @@ const AddSale = () => {
     ? (paymentMethod ? calculateNetValue(gross, paymentMethod) : 0)
     : parseFloat(netValue) || 0;
 
-  const closerCommission = calculatedNet * 0.1;
-  const sdrCommission = calculatedNet * 0.05;
+  const closerRate = closer ? getCloserCommissionRate(closer) : 0;
+  const closerCommission = calculatedNet * closerRate;
+  const sdrCommission = calculatedNet * SDR_COMMISSION_RATE;
   const netMargin = grossValue ? ((calculatedNet / parseFloat(grossValue)) * 100) : 0;
 
   const resetForm = () => {
@@ -177,40 +178,7 @@ const AddSale = () => {
                 </div>
               </div>
 
-              {/* Valor Líquido */}
-              <div className="space-y-2 md:col-span-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                    Valor Líquido
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      {paymentMethod ? `Auto (${getFeeDescription(paymentMethod)})` : "Auto — selecione o pagamento"}
-                    </span>
-                    <Switch checked={autoCalcNet} onCheckedChange={setAutoCalcNet} />
-                  </div>
-                </div>
-                {autoCalcNet ? (
-                  <div className="h-10 flex items-center px-3 rounded-md bg-secondary border border-border text-sm text-foreground">
-                    R$ {calculatedNet.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="0,00"
-                      value={netValue}
-                      onChange={(e) => setNetValue(e.target.value)}
-                      className="bg-secondary border-border pl-10"
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Método de Pagamento */}
+              {/* Método de Pagamento — moved before Valor Líquido */}
               <div className="space-y-2">
                 <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
                   Método de Pagamento
@@ -242,6 +210,39 @@ const AddSale = () => {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Valor Líquido */}
+              <div className="space-y-2 md:col-span-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                    Valor Líquido
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      {paymentMethod ? `Auto (${getFeeDescription(paymentMethod)})` : "Auto — selecione o pagamento"}
+                    </span>
+                    <Switch checked={autoCalcNet} onCheckedChange={setAutoCalcNet} />
+                  </div>
+                </div>
+                {autoCalcNet ? (
+                  <div className="h-10 flex items-center px-3 rounded-md bg-secondary border border-border text-sm text-foreground">
+                    R$ {calculatedNet.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0,00"
+                      value={netValue}
+                      onChange={(e) => setNetValue(e.target.value)}
+                      className="bg-secondary border-border pl-10"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* SDR */}
@@ -352,13 +353,17 @@ const AddSale = () => {
               </div>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Closer (10%)</span>
+                  <span className="text-muted-foreground">
+                    {closer ? `${closer} (${(closerRate * 100).toFixed(0)}%)` : "Closer"}
+                  </span>
                   <span className="font-semibold text-foreground">
                     R$ {closerCommission.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">SDR (5%)</span>
+                  <span className="text-muted-foreground">
+                    {sdr ? `${sdr} (${(SDR_COMMISSION_RATE * 100).toFixed(0)}%)` : "SDR (3%)"}
+                  </span>
                   <span className="font-semibold text-foreground">
                     R$ {sdrCommission.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                   </span>

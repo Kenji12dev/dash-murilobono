@@ -23,18 +23,19 @@ export const PAYMENT_METHODS = [
 
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
-/**
- * Calcula o valor líquido baseado no método de pagamento e valor bruto.
- * Fórmulas:
- * - TMB: bruto * 0.95
- * - Ombrelone: (bruto * 0.94) - 2.49
- * - Hubla: (bruto * 0.94) - 2.49
- * - Zouti: (bruto * 0.96) - 1.49
- * - Pix: bruto (sem taxa)
- * - Kiwify: bruto * 0.91
- * - TMB Antecipado: bruto * 0.80
- * - Infinity Pay: bruto * 1.00
- */
+export const CLOSER_COMMISSION_RATES: Record<string, number> = {
+  "Andre Kenji": 0.30,
+  "Joao Pedro": 0.05,
+  "Caio Alves": 0.05,
+  "Joao Vittor": 0.05,
+};
+
+export const SDR_COMMISSION_RATE = 0.03;
+
+export const getCloserCommissionRate = (closer: string): number => {
+  return CLOSER_COMMISSION_RATES[closer] || 0;
+};
+
 export const calculateNetValue = (grossValue: number, method: string): number => {
   switch (method) {
     case "TMB":

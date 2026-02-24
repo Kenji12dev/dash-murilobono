@@ -4,6 +4,12 @@ import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { PAYMENT_METHOD_MAP, CHART_COLORS } from "@/data/mockData";
 
+export interface DashboardFilters {
+  closer?: string;
+  sdr?: string;
+  paymentMethod?: string;
+}
+
 export interface DashboardMetrics {
   faturamentoLiquido: number;
   caixaGerado: number;
@@ -13,29 +19,64 @@ export interface DashboardMetrics {
   closerData: { name: string; sales: number; revenue: number; percentage: number }[];
   sdrData: { name: string; sales: number; percentage: number }[];
   paymentData: { name: string; value: number; percentage: number; color: string }[];
+  statusData: { name: string; count: number; percentage: number; color: string }[];
 }
 
-export const useDashboardMetrics = (startDate: Date, endDate: Date): DashboardMetrics => {
+const STATUS_COLORS: Record<string, string> = {
+  Pago: CHART_COLORS[3],
+  Pendente: CHART_COLORS[5],
+  Cancelado: CHART_COLORS[6],
+  Reembolsado: CHART_COLORS[8],
+};
+
+export const useDashboardMetrics = (
+  startDate: Date,
+  endDate: Date,
+  filters: DashboardFilters = {}
+): DashboardMetrics => {
   const { sales } = useSales();
 
   return useMemo(() => {
-    const filteredSales = sales.filter((s) => {
+    // Date-filtered sales (all statuses for status chart)
+    const dateFiltered = sales.filter((s) => {
       const saleDate = new Date(s.date);
-      return (
-        s.status === "Pago" &&
-        isWithinInterval(saleDate, {
-          start: startOfDay(startDate),
-          end: endOfDay(endDate),
-        })
-      );
+      return isWithinInterval(saleDate, {
+        start: startOfDay(startDate),
+        end: endOfDay(endDate),
+      });
     });
+
+    // Apply interactive filters
+    const applyFilters = (list: typeof sales) =>
+      list.filter((s) => {
+        if (filters.closer && s.closer !== filters.closer) return false;
+        if (filters.sdr && s.sdr !== filters.sdr) return false;
+        if (filters.paymentMethod && s.paymentMethod !== filters.paymentMethod) return false;
+        return true;
+      });
+
+    // Status distribution (from all date-filtered, with interactive filters)
+    const statusFiltered = applyFilters(dateFiltered);
+    const statusMap = new Map<string, number>();
+    statusFiltered.forEach((s) => {
+      statusMap.set(s.status, (statusMap.get(s.status) || 0) + 1);
+    });
+    const totalStatusCount = statusFiltered.length || 1;
+    const statusData = Array.from(statusMap.entries()).map(([name, count]) => ({
+      name,
+      count,
+      percentage: parseFloat(((count / totalStatusCount) * 100).toFixed(1)),
+      color: STATUS_COLORS[name] || CHART_COLORS[0],
+    }));
+
+    // KPIs only count "Pago" sales
+    const filteredSales = applyFilters(dateFiltered).filter((s) => s.status === "Pago");
 
     const faturamentoLiquido = filteredSales.reduce((sum, s) => sum + s.netValue, 0);
     const caixaGerado = filteredSales.reduce((sum, s) => sum + s.grossValue, 0);
     const quantidadeVendas = filteredSales.length;
     const ticketMedio = quantidadeVendas > 0 ? faturamentoLiquido / quantidadeVendas : 0;
 
-    // Revenue over time - group by day
     const revenueByDay = new Map<string, number>();
     filteredSales.forEach((s) => {
       const key = format(new Date(s.date), "dd MMM", { locale: ptBR });
@@ -46,7 +87,6 @@ export const useDashboardMetrics = (startDate: Date, endDate: Date): DashboardMe
       revenue,
     }));
 
-    // Closer performance
     const closerMap = new Map<string, { sales: number; revenue: number }>();
     filteredSales.forEach((s) => {
       const prev = closerMap.get(s.closer) || { sales: 0, revenue: 0 };
@@ -62,7 +102,6 @@ export const useDashboardMetrics = (startDate: Date, endDate: Date): DashboardMe
       }))
       .sort((a, b) => b.revenue - a.revenue);
 
-    // SDR performance
     const sdrMap = new Map<string, number>();
     filteredSales.forEach((s) => {
       sdrMap.set(s.sdr, (sdrMap.get(s.sdr) || 0) + 1);
@@ -76,7 +115,6 @@ export const useDashboardMetrics = (startDate: Date, endDate: Date): DashboardMe
       }))
       .sort((a, b) => b.sales - a.sales);
 
-    // Payment distribution
     const paymentMap = new Map<string, number>();
     filteredSales.forEach((s) => {
       paymentMap.set(s.paymentMethod, (paymentMap.get(s.paymentMethod) || 0) + s.netValue);
@@ -98,6 +136,7 @@ export const useDashboardMetrics = (startDate: Date, endDate: Date): DashboardMe
       closerData,
       sdrData,
       paymentData,
+      statusData,
     };
-  }, [sales, startDate, endDate]);
+  }, [sales, startDate, endDate, filters]);
 };

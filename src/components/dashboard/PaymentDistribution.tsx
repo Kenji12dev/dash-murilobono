@@ -1,4 +1,4 @@
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Sector } from "recharts";
 import { CreditCard } from "lucide-react";
 
 const CustomTooltip = ({ active, payload }: any) => {
@@ -11,51 +11,93 @@ const CustomTooltip = ({ active, payload }: any) => {
   );
 };
 
+const renderActiveShape = (props: any) => {
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
+  return (
+    <Sector cx={cx} cy={cy} innerRadius={innerRadius - 4} outerRadius={outerRadius + 6} startAngle={startAngle} endAngle={endAngle} fill={fill} />
+  );
+};
+
 interface PaymentDistributionProps {
   data: { name: string; value: number; percentage: number; color: string }[];
+  activePayment?: string;
+  onPaymentClick?: (method: string) => void;
 }
 
-const PaymentDistribution = ({ data }: PaymentDistributionProps) => (
-  <div className="glass-card gradient-border p-6 opacity-0 animate-fade-in" style={{ animationDelay: "800ms" }}>
-    <h2 className="text-sm font-semibold tracking-[0.1em] uppercase text-muted-foreground mb-4">
-      Distribuição por Método de Pagamento
-    </h2>
-    {data.length === 0 ? (
-      <div className="h-[250px] flex flex-col items-center justify-center text-muted-foreground gap-3">
-        <CreditCard className="h-10 w-10 opacity-30" />
-        <p className="text-sm">Nenhum pagamento registrado</p>
+const PaymentDistribution = ({ data, activePayment, onPaymentClick }: PaymentDistributionProps) => {
+  const activeIndex = activePayment ? data.findIndex((d) => d.name === activePayment) : -1;
+
+  return (
+    <div className="glass-card gradient-border p-6 opacity-0 animate-fade-in" style={{ animationDelay: "800ms" }}>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-semibold tracking-[0.1em] uppercase text-muted-foreground">
+          Distribuição por Método de Pagamento
+        </h2>
+        {activePayment && (
+          <button onClick={() => onPaymentClick?.("")} className="text-xs text-primary hover:underline">
+            Limpar filtro
+          </button>
+        )}
       </div>
-    ) : (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-        <div className="h-[250px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie data={data} cx="50%" cy="50%" innerRadius={60} outerRadius={95} paddingAngle={3} dataKey="value" stroke="none">
-                {data.map((entry) => (
-                  <Cell key={entry.name} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-            </PieChart>
-          </ResponsiveContainer>
+      {data.length === 0 ? (
+        <div className="h-[250px] flex flex-col items-center justify-center text-muted-foreground gap-3">
+          <CreditCard className="h-10 w-10 opacity-30" />
+          <p className="text-sm">Nenhum pagamento registrado</p>
         </div>
-        <div className="space-y-4">
-          {data.map((p) => (
-            <div key={p.name} className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: p.color }} />
-                <span className="text-sm text-foreground font-medium">{p.name}</span>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          <div className="h-[250px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={95}
+                  paddingAngle={3}
+                  dataKey="value"
+                  stroke="none"
+                  activeIndex={activeIndex >= 0 ? activeIndex : undefined}
+                  activeShape={renderActiveShape}
+                  onClick={(_, index) => onPaymentClick?.(data[index].name)}
+                  className="cursor-pointer"
+                >
+                  {data.map((entry) => (
+                    <Cell
+                      key={entry.name}
+                      fill={entry.color}
+                      opacity={activePayment && entry.name !== activePayment ? 0.3 : 1}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="space-y-4">
+            {data.map((p) => (
+              <div
+                key={p.name}
+                className="flex items-center justify-between cursor-pointer hover:bg-secondary/40 rounded-md px-2 py-1 transition-colors"
+                style={{ opacity: activePayment && p.name !== activePayment ? 0.4 : 1 }}
+                onClick={() => onPaymentClick?.(p.name)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: p.color }} />
+                  <span className="text-sm text-foreground font-medium">{p.name}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-muted-foreground">R$ {p.value.toLocaleString("pt-BR")}</span>
+                  <span className="text-sm font-semibold text-foreground w-12 text-right">{p.percentage}%</span>
+                </div>
               </div>
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-muted-foreground">R$ {p.value.toLocaleString("pt-BR")}</span>
-                <span className="text-sm font-semibold text-foreground w-12 text-right">{p.percentage}%</span>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
-    )}
-  </div>
-);
+      )}
+    </div>
+  );
+};
 
 export default PaymentDistribution;
