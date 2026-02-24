@@ -83,3 +83,23 @@ export const PAYMENT_METHOD_MAP: Record<string, { label: string; color: string }
   "TMB Antecipado": { label: "TMB Antecipado", color: CHART_COLORS[6] },
   "Infinity Pay": { label: "Infinity Pay", color: CHART_COLORS[7] },
 };
+
+export const LEAD_SOURCES = [
+  "Formulário",
+  "Stories do IG",
+  "Social Selling",
+  "Enquete",
+  "Reels",
+  "Tráfego",
+] as const;
+
+export type LeadSource = (typeof LEAD_SOURCES)[number];
+
+export const LEAD_SOURCE_MAP: Record<string, { label: string; color: string }> = {
+  "Formulário": { label: "Formulário", color: CHART_COLORS[0] },
+  "Stories do IG": { label: "Stories do IG", color: CHART_COLORS[1] },
+  "Social Selling": { label: "Social Selling", color: CHART_COLORS[2] },
+  "Enquete": { label: "Enquete", color: CHART_COLORS[3] },
+  "Reels": { label: "Reels", color: CHART_COLORS[4] },
+  "Tráfego": { label: "Tráfego", color: CHART_COLORS[5] },
+};
