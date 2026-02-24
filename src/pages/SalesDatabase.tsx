@@ -98,32 +98,32 @@ const SalesDatabase = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6 lg:p-10">
+    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-10">
       <div className="max-w-[1440px] mx-auto space-y-6">
         {/* Header + Filters */}
-        <div className="flex flex-wrap items-center gap-4 justify-between">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-4 justify-between">
           <div className="flex items-center gap-3">
             <Database className="h-5 w-5 text-primary" />
-            <h1 className="text-lg font-bold text-foreground tracking-tight">
-              Banco de Dados — Vendas
+            <h1 className="text-base sm:text-lg font-bold text-foreground tracking-tight">
+              Banco de Dados
             </h1>
             <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-md">
-              {filtered.length} registro{filtered.length !== 1 && "s"}
+              {filtered.length}
             </span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar cliente, produto, closer..."
+                placeholder="Buscar..."
                 value={search}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="pl-9 bg-secondary border-border w-64"
+                className="pl-9 bg-secondary border-border w-full sm:w-64"
                 maxLength={100}
               />
             </div>
             <Select value={statusFilter} onValueChange={handleStatusFilter}>
-              <SelectTrigger className="bg-secondary border-border w-40">
+              <SelectTrigger className="bg-secondary border-border w-full sm:w-40">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border z-50">

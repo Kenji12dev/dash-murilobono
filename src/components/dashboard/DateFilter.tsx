@@ -7,7 +7,13 @@ import { format, startOfDay, endOfDay, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
-const quickFilters = ["Hoje", "Últimos 7 dias", "Últimos 30 dias", "Personalizado"];
+const quickFilters = ["Hoje", "7d", "30d", "Custom"];
+const quickLabels: Record<string, string> = {
+  "Hoje": "Hoje",
+  "7d": "7 dias",
+  "30d": "30 dias",
+  "Custom": "Custom",
+};
 
 interface DateFilterProps {
   startDate: Date;
@@ -17,7 +23,7 @@ interface DateFilterProps {
 }
 
 const DateFilter = ({ startDate, endDate, onStartDateChange, onEndDateChange }: DateFilterProps) => {
-  const [activeFilter, setActiveFilter] = useState("Últimos 30 dias");
+  const [activeFilter, setActiveFilter] = useState("30d");
 
   const handleQuickFilter = (filter: string) => {
     setActiveFilter(filter);
@@ -27,52 +33,51 @@ const DateFilter = ({ startDate, endDate, onStartDateChange, onEndDateChange }: 
         onStartDateChange(startOfDay(today));
         onEndDateChange(endOfDay(today));
         break;
-      case "Últimos 7 dias":
+      case "7d":
         onStartDateChange(startOfDay(subDays(today, 7)));
         onEndDateChange(endOfDay(today));
         break;
-      case "Últimos 30 dias":
+      case "30d":
         onStartDateChange(startOfDay(subDays(today, 30)));
         onEndDateChange(endOfDay(today));
         break;
-      case "Personalizado":
-        // keep current dates, user picks manually
+      case "Custom":
         break;
     }
   };
 
   const handleManualDate = (setter: (d: Date) => void) => (d: Date | undefined) => {
     if (d) {
-      setActiveFilter("Personalizado");
+      setActiveFilter("Custom");
       setter(d);
     }
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <div className="flex items-center gap-2 mr-2">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="flex items-center gap-1.5 overflow-x-auto">
         {quickFilters.map((filter) => (
           <button
             key={filter}
             onClick={() => handleQuickFilter(filter)}
             className={cn(
-              "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+              "px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap",
               activeFilter === filter
                 ? "bg-primary/20 text-primary border border-primary/30"
                 : "text-muted-foreground hover:text-foreground hover:bg-secondary"
             )}
           >
-            {filter}
+            {quickLabels[filter]}
           </button>
         ))}
       </div>
 
-      <div className="flex items-center gap-2 ml-auto">
+      <div className="flex items-center gap-2 sm:ml-auto">
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" className="gap-2 bg-secondary border-border text-sm">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              {format(startDate, "dd MMM yyyy", { locale: ptBR })}
+            <Button variant="outline" className="gap-1.5 bg-secondary border-border text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3">
+              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+              {format(startDate, "dd/MM/yy", { locale: ptBR })}
               <ChevronDown className="h-3 w-3 text-muted-foreground" />
             </Button>
           </PopoverTrigger>
@@ -86,13 +91,13 @@ const DateFilter = ({ startDate, endDate, onStartDateChange, onEndDateChange }: 
           </PopoverContent>
         </Popover>
 
-        <span className="text-muted-foreground text-sm">até</span>
+        <span className="text-muted-foreground text-xs">até</span>
 
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" className="gap-2 bg-secondary border-border text-sm">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              {format(endDate, "dd MMM yyyy", { locale: ptBR })}
+            <Button variant="outline" className="gap-1.5 bg-secondary border-border text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3">
+              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+              {format(endDate, "dd/MM/yy", { locale: ptBR })}
               <ChevronDown className="h-3 w-3 text-muted-foreground" />
             </Button>
           </PopoverTrigger>
