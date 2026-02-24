@@ -22,23 +22,25 @@ const KPICard = ({ label, value, change, delay = 0 }: KPICardProps) => {
       <span className="text-3xl font-bold tracking-tight text-foreground">
         {value}
       </span>
-      <div className="flex items-center gap-1.5 mt-1">
-        {isPositive ? (
-          <TrendingUp className="h-3.5 w-3.5 text-success" />
-        ) : (
-          <TrendingDown className="h-3.5 w-3.5 text-destructive" />
-        )}
-        <span
-          className={cn(
-            "text-xs font-medium",
-            isPositive ? "text-success" : "text-destructive"
+      {change !== 0 && (
+        <div className="flex items-center gap-1.5 mt-1">
+          {isPositive ? (
+            <TrendingUp className="h-3.5 w-3.5 text-success" />
+          ) : (
+            <TrendingDown className="h-3.5 w-3.5 text-destructive" />
           )}
-        >
-          {isPositive ? "+" : ""}
-          {change}%
-        </span>
-        <span className="text-xs text-muted-foreground">vs período anterior</span>
-      </div>
+          <span
+            className={cn(
+              "text-xs font-medium",
+              isPositive ? "text-success" : "text-destructive"
+            )}
+          >
+            {isPositive ? "+" : ""}
+            {change}%
+          </span>
+          <span className="text-xs text-muted-foreground">vs período anterior</span>
+        </div>
+      )}
     </div>
   );
 };
