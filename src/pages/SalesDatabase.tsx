@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useSales } from "@/context/SalesContext";
-import { Database, Search, Trash2 } from "lucide-react";
+import { useSales, Sale } from "@/context/SalesContext";
+import { PAYMENT_METHODS, calculateNetValue, getFeeDescription } from "@/data/mockData";
+import { Database, Search, Trash2, Pencil, X, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
@@ -23,7 +24,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
   Pago: "text-success",
@@ -32,10 +33,14 @@ const statusColors: Record<string, string> = {
   Reembolsado: "text-muted-foreground",
 };
 
+const statuses = ["Pago", "Pendente", "Cancelado", "Reembolsado"];
+
 const SalesDatabase = () => {
-  const { sales, deleteSale } = useSales();
+  const { sales, deleteSale, updateSale, products, closers, sdrs } = useSales();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editData, setEditData] = useState<Partial<Sale>>({});
 
   const filtered = sales.filter((s) => {
     const matchesSearch =
@@ -49,6 +54,34 @@ const SalesDatabase = () => {
   });
 
   const totalNet = filtered.reduce((sum, s) => sum + s.netValue, 0);
+
+  const startEdit = (sale: Sale) => {
+    setEditingId(sale.id);
+    setEditData({
+      clientName: sale.clientName,
+      product: sale.product,
+      grossValue: sale.grossValue,
+      paymentMethod: sale.paymentMethod,
+      closer: sale.closer,
+      sdr: sale.sdr,
+      status: sale.status,
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditData({});
+  };
+
+  const saveEdit = () => {
+    if (!editingId) return;
+    const netValue = editData.paymentMethod && editData.grossValue
+      ? calculateNetValue(editData.grossValue, editData.paymentMethod)
+      : undefined;
+    updateSale(editingId, { ...editData, ...(netValue !== undefined ? { netValue } : {}) });
+    toast.success("Venda atualizada!");
+    cancelEdit();
+  };
 
   return (
     <div className="min-h-screen bg-background p-6 lg:p-10">
@@ -124,47 +157,127 @@ const SalesDatabase = () => {
                       <td className="px-5 py-3.5 text-muted-foreground whitespace-nowrap">
                         {format(new Date(s.date), "dd/MM/yyyy", { locale: ptBR })}
                       </td>
-                      <td className="px-5 py-3.5 text-foreground font-medium">{s.clientName}</td>
-                      <td className="px-5 py-3.5 text-foreground">{s.product}</td>
+                      <td className="px-5 py-3.5 text-foreground font-medium">
+                        {editingId === s.id ? (
+                          <Input
+                            value={editData.clientName || ""}
+                            onChange={(e) => setEditData({ ...editData, clientName: e.target.value })}
+                            className="h-8 bg-secondary border-border text-sm w-32"
+                          />
+                        ) : s.clientName}
+                      </td>
+                      <td className="px-5 py-3.5 text-foreground">
+                        {editingId === s.id ? (
+                          <Select value={editData.product || ""} onValueChange={(v) => setEditData({ ...editData, product: v })}>
+                            <SelectTrigger className="h-8 bg-secondary border-border text-sm w-36"><SelectValue /></SelectTrigger>
+                            <SelectContent className="bg-popover border-border z-50">
+                              {products.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        ) : s.product}
+                      </td>
                       <td className="px-5 py-3.5 text-right text-muted-foreground whitespace-nowrap">
-                        R$ {s.grossValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        {editingId === s.id ? (
+                          <Input
+                            type="number"
+                            value={editData.grossValue || ""}
+                            onChange={(e) => setEditData({ ...editData, grossValue: parseFloat(e.target.value) || 0 })}
+                            className="h-8 bg-secondary border-border text-sm w-24 text-right"
+                          />
+                        ) : `R$ ${s.grossValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
                       </td>
                       <td className="px-5 py-3.5 text-right text-foreground font-medium whitespace-nowrap">
-                        R$ {s.netValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        {editingId === s.id
+                          ? `R$ ${(editData.paymentMethod && editData.grossValue ? calculateNetValue(editData.grossValue, editData.paymentMethod) : s.netValue).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
+                          : `R$ ${s.netValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
                       </td>
-                      <td className="px-5 py-3.5 text-muted-foreground">{s.paymentMethod}</td>
-                      <td className="px-5 py-3.5 text-foreground">{s.closer}</td>
-                      <td className="px-5 py-3.5 text-foreground">{s.sdr}</td>
-                      <td className="px-5 py-3.5">
-                        <span className={cn("font-medium", statusColors[s.status] || "text-foreground")}>
-                          {s.status}
-                        </span>
+                      <td className="px-5 py-3.5 text-muted-foreground">
+                        {editingId === s.id ? (
+                          <Select value={editData.paymentMethod || ""} onValueChange={(v) => setEditData({ ...editData, paymentMethod: v })}>
+                            <SelectTrigger className="h-8 bg-secondary border-border text-sm w-32"><SelectValue /></SelectTrigger>
+                            <SelectContent className="bg-popover border-border z-50">
+                              {PAYMENT_METHODS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        ) : s.paymentMethod}
+                      </td>
+                      <td className="px-5 py-3.5 text-foreground">
+                        {editingId === s.id ? (
+                          <Select value={editData.closer || ""} onValueChange={(v) => setEditData({ ...editData, closer: v })}>
+                            <SelectTrigger className="h-8 bg-secondary border-border text-sm w-28"><SelectValue /></SelectTrigger>
+                            <SelectContent className="bg-popover border-border z-50">
+                              {closers.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        ) : s.closer}
+                      </td>
+                      <td className="px-5 py-3.5 text-foreground">
+                        {editingId === s.id ? (
+                          <Select value={editData.sdr || ""} onValueChange={(v) => setEditData({ ...editData, sdr: v })}>
+                            <SelectTrigger className="h-8 bg-secondary border-border text-sm w-24"><SelectValue /></SelectTrigger>
+                            <SelectContent className="bg-popover border-border z-50">
+                              {sdrs.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        ) : s.sdr}
                       </td>
                       <td className="px-5 py-3.5">
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <button className="text-muted-foreground hover:text-destructive transition-colors">
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="bg-card border-border">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Excluir venda?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Essa ação não pode ser desfeita. A venda de {s.clientName} será removida permanentemente.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel className="bg-secondary border-border">Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => deleteSale(s.id)}
-                                className="bg-destructive text-destructive-foreground"
-                              >
-                                Excluir
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        {editingId === s.id ? (
+                          <Select value={editData.status || ""} onValueChange={(v) => setEditData({ ...editData, status: v })}>
+                            <SelectTrigger className="h-8 bg-secondary border-border text-sm w-28"><SelectValue /></SelectTrigger>
+                            <SelectContent className="bg-popover border-border z-50">
+                              {statuses.map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <span className={cn("font-medium", statusColors[s.status] || "text-foreground")}>
+                            {s.status}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-2">
+                          {editingId === s.id ? (
+                            <>
+                              <button onClick={saveEdit} className="text-success hover:text-success/80 transition-colors">
+                                <Check className="h-4 w-4" />
+                              </button>
+                              <button onClick={cancelEdit} className="text-muted-foreground hover:text-destructive transition-colors">
+                                <X className="h-4 w-4" />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button onClick={() => startEdit(s)} className="text-muted-foreground hover:text-primary transition-colors">
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <button className="text-muted-foreground hover:text-destructive transition-colors">
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="bg-card border-border">
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir venda?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Essa ação não pode ser desfeita. A venda de {s.clientName} será removida permanentemente.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel className="bg-secondary border-border">Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => deleteSale(s.id)}
+                                      className="bg-destructive text-destructive-foreground"
+                                    >
+                                      Excluir
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

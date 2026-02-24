@@ -5,7 +5,9 @@ import KPICard from "@/components/dashboard/KPICard";
 import RevenueChart from "@/components/dashboard/RevenueChart";
 import TeamPerformance from "@/components/dashboard/TeamPerformance";
 import PaymentDistribution from "@/components/dashboard/PaymentDistribution";
-import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
+import StatusDistribution from "@/components/dashboard/StatusDistribution";
+import { useDashboardMetrics, DashboardFilters } from "@/hooks/useDashboardMetrics";
+import { PAYMENT_METHOD_MAP } from "@/data/mockData";
 
 const formatValue = (v: number) => {
   if (v >= 1000000) return `R$ ${(v / 1000000).toFixed(2)}M`;
@@ -16,8 +18,21 @@ const formatValue = (v: number) => {
 const Dashboard = () => {
   const [startDate, setStartDate] = useState<Date>(subDays(new Date(), 30));
   const [endDate, setEndDate] = useState<Date>(new Date());
+  const [filters, setFilters] = useState<DashboardFilters>({});
 
-  const metrics = useDashboardMetrics(startDate, endDate);
+  const metrics = useDashboardMetrics(startDate, endDate, filters);
+
+  const handleCloserClick = (name: string) => {
+    setFilters((prev) => ({ ...prev, closer: prev.closer === name || !name ? undefined : name }));
+  };
+  const handleSdrClick = (name: string) => {
+    setFilters((prev) => ({ ...prev, sdr: prev.sdr === name || !name ? undefined : name }));
+  };
+  const handlePaymentClick = (name: string) => {
+    // Reverse lookup from label to method key
+    const methodKey = Object.entries(PAYMENT_METHOD_MAP).find(([, v]) => v.label === name)?.[0] || name;
+    setFilters((prev) => ({ ...prev, paymentMethod: prev.paymentMethod === methodKey || !name ? undefined : methodKey }));
+  };
 
   return (
     <div className="p-6 lg:p-10">
@@ -29,6 +44,33 @@ const Dashboard = () => {
           onEndDateChange={setEndDate}
         />
 
+        {(filters.closer || filters.sdr || filters.paymentMethod) && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-muted-foreground">Filtros ativos:</span>
+            {filters.closer && (
+              <span className="text-xs bg-primary/15 text-primary px-2 py-1 rounded-md">
+                Closer: {filters.closer}
+                <button onClick={() => handleCloserClick("")} className="ml-1 hover:text-destructive">×</button>
+              </span>
+            )}
+            {filters.sdr && (
+              <span className="text-xs bg-primary/15 text-primary px-2 py-1 rounded-md">
+                SDR: {filters.sdr}
+                <button onClick={() => handleSdrClick("")} className="ml-1 hover:text-destructive">×</button>
+              </span>
+            )}
+            {filters.paymentMethod && (
+              <span className="text-xs bg-primary/15 text-primary px-2 py-1 rounded-md">
+                Pagamento: {filters.paymentMethod}
+                <button onClick={() => handlePaymentClick("")} className="ml-1 hover:text-destructive">×</button>
+              </span>
+            )}
+            <button onClick={() => setFilters({})} className="text-xs text-destructive hover:underline ml-2">
+              Limpar todos
+            </button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <KPICard label="Faturamento Líquido" value={formatValue(metrics.faturamentoLiquido)} change={0} delay={0} />
           <KPICard label="Caixa Gerado" value={formatValue(metrics.caixaGerado)} change={0} delay={100} />
@@ -37,8 +79,20 @@ const Dashboard = () => {
         </div>
 
         <RevenueChart data={metrics.revenueOverTime} />
-        <TeamPerformance closerData={metrics.closerData} sdrData={metrics.sdrData} />
-        <PaymentDistribution data={metrics.paymentData} />
+        <StatusDistribution data={metrics.statusData} />
+        <TeamPerformance
+          closerData={metrics.closerData}
+          sdrData={metrics.sdrData}
+          activeCloser={filters.closer}
+          activeSdr={filters.sdr}
+          onCloserClick={handleCloserClick}
+          onSdrClick={handleSdrClick}
+        />
+        <PaymentDistribution
+          data={metrics.paymentData}
+          activePayment={filters.paymentMethod ? (PAYMENT_METHOD_MAP[filters.paymentMethod]?.label || filters.paymentMethod) : undefined}
+          onPaymentClick={handlePaymentClick}
+        />
       </div>
     </div>
   );
