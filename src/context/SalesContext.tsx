@@ -11,6 +11,7 @@ export interface Sale {
   closer: string;
   sdr: string;
   status: string;
+  leadSource: string;
   notes: string;
 }
 

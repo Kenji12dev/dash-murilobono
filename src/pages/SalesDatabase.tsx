@@ -2,7 +2,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useSales, Sale } from "@/context/SalesContext";
-import { PAYMENT_METHODS, calculateNetValue, getFeeDescription } from "@/data/mockData";
+import { PAYMENT_METHODS, LEAD_SOURCES, calculateNetValue, getFeeDescription } from "@/data/mockData";
 import { Database, Search, Trash2, Pencil, X, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -65,6 +65,7 @@ const SalesDatabase = () => {
       closer: sale.closer,
       sdr: sale.sdr,
       status: sale.status,
+      leadSource: sale.leadSource,
     });
   };
 
@@ -147,6 +148,7 @@ const SalesDatabase = () => {
                     <th className="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Pagamento</th>
                     <th className="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Closer</th>
                     <th className="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">SDR</th>
+                    <th className="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Origem</th>
                     <th className="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
                     <th className="px-5 py-3"></th>
                   </tr>
@@ -221,6 +223,16 @@ const SalesDatabase = () => {
                           </Select>
                         ) : s.sdr}
                       </td>
+                      <td className="px-5 py-3.5 text-foreground">
+                        {editingId === s.id ? (
+                          <Select value={editData.leadSource || ""} onValueChange={(v) => setEditData({ ...editData, leadSource: v })}>
+                            <SelectTrigger className="h-8 bg-secondary border-border text-sm w-28"><SelectValue /></SelectTrigger>
+                            <SelectContent className="bg-popover border-border z-50">
+                              {LEAD_SOURCES.map((ls) => <SelectItem key={ls} value={ls}>{ls}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        ) : s.leadSource}
+                      </td>
                       <td className="px-5 py-3.5">
                         {editingId === s.id ? (
                           <Select value={editData.status || ""} onValueChange={(v) => setEditData({ ...editData, status: v })}>
@@ -290,7 +302,7 @@ const SalesDatabase = () => {
                     <td className="px-5 py-3.5 text-right font-bold text-foreground whitespace-nowrap">
                       R$ {totalNet.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                     </td>
-                    <td colSpan={5}></td>
+                    <td colSpan={6}></td>
                   </tr>
                 </tfoot>
               </table>

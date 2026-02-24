@@ -5,9 +5,10 @@ import KPICard from "@/components/dashboard/KPICard";
 import RevenueChart from "@/components/dashboard/RevenueChart";
 import TeamPerformance from "@/components/dashboard/TeamPerformance";
 import PaymentDistribution from "@/components/dashboard/PaymentDistribution";
+import LeadSourceDistribution from "@/components/dashboard/LeadSourceDistribution";
 import StatusDistribution from "@/components/dashboard/StatusDistribution";
 import { useDashboardMetrics, DashboardFilters } from "@/hooks/useDashboardMetrics";
-import { PAYMENT_METHOD_MAP } from "@/data/mockData";
+import { PAYMENT_METHOD_MAP, LEAD_SOURCE_MAP } from "@/data/mockData";
 
 const formatValue = (v: number) =>
   `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -26,9 +27,12 @@ const Dashboard = () => {
     setFilters((prev) => ({ ...prev, sdr: prev.sdr === name || !name ? undefined : name }));
   };
   const handlePaymentClick = (name: string) => {
-    // Reverse lookup from label to method key
     const methodKey = Object.entries(PAYMENT_METHOD_MAP).find(([, v]) => v.label === name)?.[0] || name;
     setFilters((prev) => ({ ...prev, paymentMethod: prev.paymentMethod === methodKey || !name ? undefined : methodKey }));
+  };
+  const handleLeadSourceClick = (name: string) => {
+    const sourceKey = Object.entries(LEAD_SOURCE_MAP).find(([, v]) => v.label === name)?.[0] || name;
+    setFilters((prev) => ({ ...prev, leadSource: prev.leadSource === sourceKey || !name ? undefined : sourceKey }));
   };
 
   return (
@@ -41,7 +45,7 @@ const Dashboard = () => {
           onEndDateChange={setEndDate}
         />
 
-        {(filters.closer || filters.sdr || filters.paymentMethod) && (
+        {(filters.closer || filters.sdr || filters.paymentMethod || filters.leadSource) && (
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-muted-foreground">Filtros ativos:</span>
             {filters.closer && (
@@ -60,6 +64,12 @@ const Dashboard = () => {
               <span className="text-xs bg-primary/15 text-primary px-2 py-1 rounded-md">
                 Pagamento: {filters.paymentMethod}
                 <button onClick={() => handlePaymentClick("")} className="ml-1 hover:text-destructive">×</button>
+              </span>
+            )}
+            {filters.leadSource && (
+              <span className="text-xs bg-primary/15 text-primary px-2 py-1 rounded-md">
+                Origem: {filters.leadSource}
+                <button onClick={() => handleLeadSourceClick("")} className="ml-1 hover:text-destructive">×</button>
               </span>
             )}
             <button onClick={() => setFilters({})} className="text-xs text-destructive hover:underline ml-2">
@@ -89,6 +99,11 @@ const Dashboard = () => {
           data={metrics.paymentData}
           activePayment={filters.paymentMethod ? (PAYMENT_METHOD_MAP[filters.paymentMethod]?.label || filters.paymentMethod) : undefined}
           onPaymentClick={handlePaymentClick}
+        />
+        <LeadSourceDistribution
+          data={metrics.leadSourceData}
+          activeSource={filters.leadSource ? (LEAD_SOURCE_MAP[filters.leadSource]?.label || filters.leadSource) : undefined}
+          onSourceClick={handleLeadSourceClick}
         />
       </div>
     </div>

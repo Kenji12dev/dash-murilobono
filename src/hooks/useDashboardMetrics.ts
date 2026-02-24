@@ -2,12 +2,13 @@ import { useMemo } from "react";
 import { useSales } from "@/context/SalesContext";
 import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { PAYMENT_METHOD_MAP, CHART_COLORS } from "@/data/mockData";
+import { PAYMENT_METHOD_MAP, LEAD_SOURCE_MAP, CHART_COLORS } from "@/data/mockData";
 
 export interface DashboardFilters {
   closer?: string;
   sdr?: string;
   paymentMethod?: string;
+  leadSource?: string;
 }
 
 export interface DashboardMetrics {
@@ -20,6 +21,7 @@ export interface DashboardMetrics {
   sdrData: { name: string; sales: number; percentage: number }[];
   paymentData: { name: string; value: number; percentage: number; color: string }[];
   statusData: { name: string; count: number; percentage: number; color: string }[];
+  leadSourceData: { name: string; value: number; percentage: number; color: string }[];
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -52,6 +54,7 @@ export const useDashboardMetrics = (
         if (filters.closer && s.closer !== filters.closer) return false;
         if (filters.sdr && s.sdr !== filters.sdr) return false;
         if (filters.paymentMethod && s.paymentMethod !== filters.paymentMethod) return false;
+        if (filters.leadSource && s.leadSource !== filters.leadSource) return false;
         return true;
       });
 
@@ -127,6 +130,21 @@ export const useDashboardMetrics = (
       color: PAYMENT_METHOD_MAP[method]?.color || CHART_COLORS[3],
     }));
 
+    // Lead source distribution
+    const leadSourceMap = new Map<string, number>();
+    filteredSales.forEach((s) => {
+      if (s.leadSource) {
+        leadSourceMap.set(s.leadSource, (leadSourceMap.get(s.leadSource) || 0) + 1);
+      }
+    });
+    const totalLeadSources = filteredSales.filter((s) => s.leadSource).length || 1;
+    const leadSourceData = Array.from(leadSourceMap.entries()).map(([source, count]) => ({
+      name: LEAD_SOURCE_MAP[source]?.label || source,
+      value: count,
+      percentage: parseFloat(((count / totalLeadSources) * 100).toFixed(1)),
+      color: LEAD_SOURCE_MAP[source]?.color || CHART_COLORS[0],
+    }));
+
     return {
       faturamentoLiquido,
       caixaGerado,
@@ -137,6 +155,7 @@ export const useDashboardMetrics = (
       sdrData,
       paymentData,
       statusData,
+      leadSourceData,
     };
   }, [sales, startDate, endDate, filters]);
 };

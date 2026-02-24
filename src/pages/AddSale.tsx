@@ -4,7 +4,7 @@ import { ptBR } from "date-fns/locale";
 import { CalendarIcon, Save, X, DollarSign, Users, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSales } from "@/context/SalesContext";
-import { PAYMENT_METHODS, calculateNetValue, getFeeDescription, getCloserCommissionRate, SDR_COMMISSION_RATE } from "@/data/mockData";
+import { PAYMENT_METHODS, LEAD_SOURCES, calculateNetValue, getFeeDescription, getCloserCommissionRate, SDR_COMMISSION_RATE } from "@/data/mockData";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,7 @@ const AddSale = () => {
   const [closer, setCloser] = useState("");
   const [sdr, setSdr] = useState("");
   const [status, setStatus] = useState("");
+  const [leadSource, setLeadSource] = useState("");
   const [notes, setNotes] = useState("");
 
   const gross = parseFloat(grossValue) || 0;
@@ -62,11 +63,12 @@ const AddSale = () => {
     setCloser("");
     setSdr("");
     setStatus("");
+    setLeadSource("");
     setNotes("");
   };
 
   const handleSave = () => {
-    if (!clientName || !product || !grossValue || !paymentMethod || !closer || !sdr || !status) {
+    if (!clientName || !product || !grossValue || !paymentMethod || !closer || !sdr || !status || !leadSource) {
       toast.error("Preencha todos os campos obrigatórios.");
       return;
     }
@@ -81,6 +83,7 @@ const AddSale = () => {
       closer,
       sdr,
       status,
+      leadSource,
       notes: notes.trim(),
     });
 
@@ -274,6 +277,23 @@ const AddSale = () => {
                   <SelectContent className="bg-popover border-border z-50">
                     {statuses.map((s) => (
                       <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Origem do Lead */}
+              <div className="space-y-2">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                  Origem do Lead
+                </Label>
+                <Select value={leadSource} onValueChange={setLeadSource}>
+                  <SelectTrigger className="bg-secondary border-border">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-border z-50">
+                    {LEAD_SOURCES.map((ls) => (
+                      <SelectItem key={ls} value={ls}>{ls}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
