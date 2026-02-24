@@ -7,6 +7,7 @@ import TeamPerformance from "@/components/dashboard/TeamPerformance";
 import PaymentDistribution from "@/components/dashboard/PaymentDistribution";
 import LeadSourceDistribution from "@/components/dashboard/LeadSourceDistribution";
 import StatusDistribution from "@/components/dashboard/StatusDistribution";
+import CallStatusChart from "@/components/dashboard/CallStatusChart";
 import { useDashboardMetrics, DashboardFilters } from "@/hooks/useDashboardMetrics";
 import { PAYMENT_METHOD_MAP, LEAD_SOURCE_MAP } from "@/data/mockData";
 
@@ -87,6 +88,11 @@ const Dashboard = () => {
 
         <RevenueChart data={metrics.revenueOverTime} />
         <StatusDistribution data={metrics.statusData} />
+        <CallStatusChart
+          data={metrics.statusData}
+          closers={metrics.closersList}
+          salesByCloser={metrics.callStatusByCloser}
+        />
         <TeamPerformance
           closerData={metrics.closerData}
           sdrData={metrics.sdrData}
