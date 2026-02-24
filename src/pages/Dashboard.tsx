@@ -9,11 +9,8 @@ import StatusDistribution from "@/components/dashboard/StatusDistribution";
 import { useDashboardMetrics, DashboardFilters } from "@/hooks/useDashboardMetrics";
 import { PAYMENT_METHOD_MAP } from "@/data/mockData";
 
-const formatValue = (v: number) => {
-  if (v >= 1000000) return `R$ ${(v / 1000000).toFixed(2)}M`;
-  if (v >= 1000) return `R$ ${(v / 1000).toFixed(1)}k`;
-  return `R$ ${v.toFixed(2)}`;
-};
+const formatValue = (v: number) =>
+  `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const Dashboard = () => {
   const [startDate, setStartDate] = useState<Date>(subDays(new Date(), 30));
