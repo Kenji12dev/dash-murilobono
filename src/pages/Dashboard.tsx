@@ -10,6 +10,7 @@ import PaymentDistribution from "@/components/dashboard/PaymentDistribution";
 import LeadSourceDistribution from "@/components/dashboard/LeadSourceDistribution";
 import StatusDistribution from "@/components/dashboard/StatusDistribution";
 import CallStatusChart from "@/components/dashboard/CallStatusChart";
+import MonthlyGoals from "@/components/dashboard/MonthlyGoals";
 import { useDashboardMetrics, DashboardFilters } from "@/hooks/useDashboardMetrics";
 import { PAYMENT_METHOD_MAP, LEAD_SOURCE_MAP } from "@/data/mockData";
 
@@ -82,6 +83,12 @@ const Dashboard = () => {
             </button>
           </div>
         )}
+
+        <MonthlyGoals
+          currentRevenue={metrics.faturamentoLiquido}
+          currentCash={metrics.caixaGerado}
+          isAdmin={role === "admin"}
+        />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <KPICard label="Faturamento Líquido" value={formatValue(metrics.faturamentoLiquido)} change={0} delay={0} />

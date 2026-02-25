@@ -85,6 +85,36 @@ export type Database = {
           },
         ]
       }
+      monthly_goals: {
+        Row: {
+          cash_goal: number
+          created_at: string
+          id: string
+          month: number
+          revenue_goal: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          cash_goal?: number
+          created_at?: string
+          id?: string
+          month: number
+          revenue_goal?: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          cash_goal?: number
+          created_at?: string
+          id?: string
+          month?: number
+          revenue_goal?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

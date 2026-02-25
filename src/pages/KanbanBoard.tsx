@@ -3,7 +3,7 @@ import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useSales, Sale } from "@/context/SalesContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Columns3, GripVertical, Plus, CalendarIcon, Save, X, ArrowRight } from "lucide-react";
+import { Columns3, GripVertical, Plus, CalendarIcon, Save, X, ArrowRight, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import DateFilter from "@/components/dashboard/DateFilter";
@@ -32,6 +32,16 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const statusColumns = [
   { id: "Pendente", label: "Agendado / Pendente", color: "border-yellow-500/60 bg-yellow-500/5" },
@@ -42,7 +52,7 @@ const statusColumns = [
 ];
 
 const KanbanBoard = () => {
-  const { sales, addSale, updateSale, products, closers, sdrs } = useSales();
+  const { sales, addSale, updateSale, deleteSale, products, closers, sdrs } = useSales();
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverColId, setDragOverColId] = useState<string | null>(null);
   const [startDate, setStartDate] = useState(() => startOfDay(subDays(new Date(), 30)));
@@ -60,15 +70,24 @@ const KanbanBoard = () => {
   const [newLeadSource, setNewLeadSource] = useState("");
   const [newNotes, setNewNotes] = useState("");
 
-  // Move dialog (shown when dragging between columns)
+  // Move dialog
   const [moveDialog, setMoveDialog] = useState<{ saleId: string; targetStatus: string } | null>(null);
   const [moveGross, setMoveGross] = useState("");
   const [movePayment, setMovePayment] = useState("");
   const [moveDownPayment, setMoveDownPayment] = useState("");
 
+  // Follow Up dialog
+  const [followUpDialog, setFollowUpDialog] = useState<{ saleId: string } | null>(null);
+  const [followUpDate, setFollowUpDate] = useState<Date>(new Date());
+  const [followUpStartTime, setFollowUpStartTime] = useState("10:00");
+  const [followUpEndTime, setFollowUpEndTime] = useState("11:00");
+
   // Detail dialog
   const [detailSale, setDetailSale] = useState<Sale | null>(null);
   const [editNotes, setEditNotes] = useState("");
+
+  // Delete dialog
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const filteredSales = sales.filter((s) => {
     const d = new Date(s.date);
@@ -90,12 +109,12 @@ const KanbanBoard = () => {
     if (!draggedId) return;
     const sale = sales.find((s) => s.id === draggedId);
     if (sale && sale.status !== targetStatus) {
-      // Loss doesn't need value/payment — move directly
       if (targetStatus === "Loss") {
         updateSale(draggedId, { status: "Loss" });
         toast.success("Venda movida para Loss");
+      } else if (targetStatus === "Follow Up") {
+        setFollowUpDialog({ saleId: draggedId });
       } else {
-        // Open move dialog so user can fill value/payment
         setMoveDialog({ saleId: draggedId, targetStatus });
         setMoveGross(sale.grossValue > 0 ? String(sale.grossValue) : "");
         setMovePayment(sale.paymentMethod || "");
@@ -141,6 +160,50 @@ const KanbanBoard = () => {
     setMoveDownPayment("");
   };
 
+  // Follow Up confirm
+  const handleFollowUpConfirm = async () => {
+    if (!followUpDialog) return;
+    const sale = sales.find((s) => s.id === followUpDialog.saleId);
+    updateSale(followUpDialog.saleId, { status: "Follow Up", date: followUpDate });
+    toast.success("Movido para Follow Up");
+
+    // Create calendar event for follow-up
+    if (sale) {
+      try {
+        const { data } = await supabase.functions.invoke("google-calendar-event", {
+          body: {
+            collaborator_name: sale.closer,
+            client_name: sale.clientName,
+            product: sale.product,
+            date: followUpDate.toISOString(),
+            start_time: followUpStartTime,
+            end_time: followUpEndTime,
+            notes: `Follow Up — ${sale.notes || ""}`.trim(),
+          },
+        });
+        if (data?.success) {
+          toast.success("📅 Follow Up agendado no Google Calendar!", { duration: 4000 });
+        }
+      } catch (err) {
+        console.warn("Calendar integration error:", err);
+      }
+    }
+
+    setFollowUpDialog(null);
+    setFollowUpDate(new Date());
+    setFollowUpStartTime("10:00");
+    setFollowUpEndTime("11:00");
+  };
+
+  // Delete
+  const handleDelete = () => {
+    if (!deleteId) return;
+    deleteSale(deleteId);
+    toast.success("Agendamento excluído");
+    setDeleteId(null);
+    setDetailSale(null);
+  };
+
   const salesByStatus = (status: string) =>
     filteredSales
       .filter((s) => s.status === status)
@@ -179,7 +242,6 @@ const KanbanBoard = () => {
     });
     toast.success("Agendamento criado!");
 
-    // Try to create Google Calendar event for the closer
     try {
       const { data, error } = await supabase.functions.invoke("google-calendar-event", {
         body: {
@@ -195,7 +257,7 @@ const KanbanBoard = () => {
       if (data?.success) {
         toast.success("📅 Evento criado no Google Calendar!", { duration: 4000 });
       } else if (data?.skipped) {
-        // Calendar not linked — silently skip
+        // Calendar not linked
       } else if (error || data?.error) {
         console.warn("Calendar event error:", data?.error || error?.message);
       }
@@ -221,6 +283,7 @@ const KanbanBoard = () => {
   };
 
   const moveSale = moveDialog ? sales.find((s) => s.id === moveDialog.saleId) : null;
+  const followUpSale = followUpDialog ? sales.find((s) => s.id === followUpDialog.saleId) : null;
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-10">
@@ -235,11 +298,7 @@ const KanbanBoard = () => {
               {filteredSales.length} venda{filteredSales.length !== 1 && "s"}
             </span>
           </div>
-          <Button
-            onClick={() => setAddOpen(true)}
-            size="sm"
-            className="font-semibold"
-          >
+          <Button onClick={() => setAddOpen(true)} size="sm" className="font-semibold">
             <Plus className="h-4 w-4 mr-1" />
             Novo Agendamento
           </Button>
@@ -328,7 +387,7 @@ const KanbanBoard = () => {
         </div>
       </div>
 
-      {/* Add Scheduling Dialog — simplified, no value/payment */}
+      {/* Add Scheduling Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -412,7 +471,7 @@ const KanbanBoard = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Move Dialog — appears when dragging between columns */}
+      {/* Move Dialog */}
       <Dialog open={!!moveDialog} onOpenChange={(open) => { if (!open) { setMoveDialog(null); setMoveGross(""); setMovePayment(""); setMoveDownPayment(""); } }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -427,12 +486,7 @@ const KanbanBoard = () => {
           <div className="space-y-4 mt-2">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-muted-foreground">Valor Bruto (R$)</Label>
-              <Input
-                type="number"
-                placeholder="0,00"
-                value={moveGross}
-                onChange={(e) => setMoveGross(e.target.value)}
-              />
+              <Input type="number" placeholder="0,00" value={moveGross} onChange={(e) => setMoveGross(e.target.value)} />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-muted-foreground">Método de Pagamento</Label>
@@ -448,12 +502,7 @@ const KanbanBoard = () => {
             {movePayment === "TMB" && (
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-muted-foreground">Valor de Entrada</Label>
-                <Input
-                  type="number"
-                  placeholder="0,00"
-                  value={moveDownPayment}
-                  onChange={(e) => setMoveDownPayment(e.target.value)}
-                />
+                <Input type="number" placeholder="0,00" value={moveDownPayment} onChange={(e) => setMoveDownPayment(e.target.value)} />
               </div>
             )}
             {moveGross && movePayment && (
@@ -469,6 +518,50 @@ const KanbanBoard = () => {
                 Pular
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Follow Up Dialog */}
+      <Dialog open={!!followUpDialog} onOpenChange={(open) => { if (!open) setFollowUpDialog(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarIcon className="h-4 w-4 text-primary" />
+              Agendar Follow Up
+            </DialogTitle>
+            <DialogDescription>
+              {followUpSale ? `${followUpSale.clientName} — ${followUpSale.product}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground">Data do Follow Up</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                    <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                    {format(followUpDate, "dd MMM yyyy", { locale: ptBR })}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={followUpDate} onSelect={(d) => d && setFollowUpDate(d)} className="p-3 pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground">Início</Label>
+                <Input type="time" value={followUpStartTime} onChange={(e) => setFollowUpStartTime(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground">Fim</Label>
+                <Input type="time" value={followUpEndTime} onChange={(e) => setFollowUpEndTime(e.target.value)} />
+              </div>
+            </div>
+            <Button onClick={handleFollowUpConfirm} className="w-full font-semibold">
+              <Save className="h-4 w-4 mr-1" /> Confirmar Follow Up
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -537,14 +630,44 @@ const KanbanBoard = () => {
                   />
                 </div>
 
-                <Button onClick={saveDetail} className="w-full font-semibold">
-                  <Save className="h-4 w-4 mr-1" /> Salvar Alterações
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={saveDetail} className="flex-1 font-semibold">
+                    <Save className="h-4 w-4 mr-1" /> Salvar Alterações
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteId(detailSale.id);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir agendamento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Essa ação não pode ser desfeita. O agendamento será removido permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
