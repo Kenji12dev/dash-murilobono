@@ -4,8 +4,20 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { CalendarDays, Check, Loader2, Save, User } from "lucide-react";
 import { toast } from "sonner";
+
+interface CollaboratorOption {
+  id: string;
+  name: string;
+}
 
 const Profile = () => {
   const { user } = useAuth();
@@ -19,8 +31,14 @@ const Profile = () => {
   const [calendarLinked, setCalendarLinked] = useState(false);
   const [calendarLinking, setCalendarLinking] = useState(false);
 
+  // If user has no linked collaborator, show selector
+  const [allCollaborators, setAllCollaborators] = useState<CollaboratorOption[]>([]);
+  const [selectedCollabId, setSelectedCollabId] = useState("");
+  const [linkingCollab, setLinkingCollab] = useState(false);
+
   const fetchProfile = async () => {
     if (!user) return;
+
     const { data } = await supabase
       .from("profiles")
       .select("display_name, email")
@@ -48,6 +66,14 @@ const Profile = () => {
         .eq("collaborator_id", collab.id)
         .maybeSingle();
       setCalendarLinked(!!token);
+    } else {
+      // Fetch all collaborators without user_id for linking
+      const { data: collabs } = await supabase
+        .from("collaborators")
+        .select("id, name")
+        .is("user_id", null)
+        .order("name");
+      if (collabs) setAllCollaborators(collabs);
     }
 
     setLoading(false);
@@ -100,6 +126,23 @@ const Profile = () => {
       toast.error("Erro ao salvar: " + error.message);
     } else {
       toast.success("Perfil atualizado!");
+    }
+  };
+
+  const handleLinkCollaborator = async () => {
+    if (!user || !selectedCollabId) return;
+    setLinkingCollab(true);
+    const { error } = await supabase
+      .from("collaborators")
+      .update({ user_id: user.id })
+      .eq("id", selectedCollabId);
+    setLinkingCollab(false);
+    if (error) {
+      toast.error("Erro ao vincular: " + error.message);
+    } else {
+      toast.success("Colaborador vinculado ao seu perfil!");
+      setCollaboratorId(selectedCollabId);
+      setAllCollaborators([]);
     }
   };
 
@@ -169,6 +212,31 @@ const Profile = () => {
             Salvar
           </Button>
         </div>
+
+        {/* Link collaborator if not linked */}
+        {!collaboratorId && allCollaborators.length > 0 && (
+          <div className="glass-card gradient-border p-4 sm:p-6 space-y-4">
+            <h2 className="text-sm font-semibold text-foreground">Vincular Colaborador</h2>
+            <p className="text-xs text-muted-foreground">
+              Selecione seu nome na lista para vincular seu perfil de colaborador.
+            </p>
+            <div className="flex items-center gap-2">
+              <Select value={selectedCollabId} onValueChange={setSelectedCollabId}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Selecione seu nome" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allCollaborators.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button size="sm" onClick={handleLinkCollaborator} disabled={!selectedCollabId || linkingCollab}>
+                {linkingCollab ? <Loader2 className="h-4 w-4 animate-spin" /> : "Vincular"}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Google Calendar */}
         {collaboratorId && (
