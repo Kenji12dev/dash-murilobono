@@ -3,15 +3,15 @@ import { Calendar, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { format, startOfDay, endOfDay, subDays } from "date-fns";
+import { format, startOfDay, endOfDay, subDays, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
-const quickFilters = ["Hoje", "7d", "30d", "Custom"];
+const quickFilters = ["Hoje", "7d", "Mês", "Custom"];
 const quickLabels: Record<string, string> = {
   "Hoje": "Hoje",
   "7d": "7 dias",
-  "30d": "30 dias",
+  "Mês": "Mês atual",
   "Custom": "Custom",
 };
 
@@ -23,7 +23,7 @@ interface DateFilterProps {
 }
 
 const DateFilter = ({ startDate, endDate, onStartDateChange, onEndDateChange }: DateFilterProps) => {
-  const [activeFilter, setActiveFilter] = useState("30d");
+  const [activeFilter, setActiveFilter] = useState("Mês");
 
   const handleQuickFilter = (filter: string) => {
     setActiveFilter(filter);
@@ -37,8 +37,8 @@ const DateFilter = ({ startDate, endDate, onStartDateChange, onEndDateChange }: 
         onStartDateChange(startOfDay(subDays(today, 7)));
         onEndDateChange(endOfDay(today));
         break;
-      case "30d":
-        onStartDateChange(startOfDay(subDays(today, 30)));
+      case "Mês":
+        onStartDateChange(startOfMonth(today));
         onEndDateChange(endOfDay(today));
         break;
       case "Custom":
