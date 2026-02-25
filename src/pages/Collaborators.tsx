@@ -68,6 +68,7 @@ const Collaborators = () => {
   const [newCollabName, setNewCollabName] = useState("");
   const [newCollabType, setNewCollabType] = useState<string>("closer");
   const [newCollabRate, setNewCollabRate] = useState("");
+  const [newCollabFixedSalary, setNewCollabFixedSalary] = useState("");
   const [addCollabLoading, setAddCollabLoading] = useState(false);
 
   const fetchCollaborators = async () => {
@@ -146,7 +147,7 @@ const Collaborators = () => {
     setAddCollabLoading(true);
     const { error } = await supabase
       .from("collaborators")
-      .insert({ name: newCollabName.trim(), type: newCollabType, commission_rate: rate });
+      .insert({ name: newCollabName.trim(), type: newCollabType, commission_rate: rate, fixed_salary: parseFloat(newCollabFixedSalary) || 0 });
     setAddCollabLoading(false);
     if (error) {
       toast.error("Erro: " + error.message);
@@ -156,6 +157,7 @@ const Collaborators = () => {
       setNewCollabName("");
       setNewCollabType("closer");
       setNewCollabRate("");
+      setNewCollabFixedSalary("");
       fetchCollaborators();
     }
   };
@@ -448,6 +450,10 @@ const Collaborators = () => {
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-muted-foreground">Comissão (%)</Label>
               <Input type="number" min="0" max="100" value={newCollabRate} onChange={(e) => setNewCollabRate(e.target.value)} placeholder="Ex: 5" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground">Salário Fixo (R$)</Label>
+              <Input type="number" min="0" step="100" value={newCollabFixedSalary} onChange={(e) => setNewCollabFixedSalary(e.target.value)} placeholder="Ex: 2000" />
             </div>
             <Button onClick={handleAddCollab} disabled={addCollabLoading} className="w-full">
               {addCollabLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="h-4 w-4 mr-1" /> Adicionar</>}
