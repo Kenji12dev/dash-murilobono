@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BarChart3, PlusCircle, Database, Columns3, Users, LogOut, Menu, X } from "lucide-react";
+import { BarChart3, PlusCircle, Database, Columns3, Users, LogOut, Menu, X, UserCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ const AppNav = ({ activeTab, onTabChange }: AppNavProps) => {
     ...(role === "admin"
       ? [{ id: "collaborators", label: "Colaboradores", icon: Users }]
       : []),
+    { id: "profile", label: "Perfil", icon: UserCircle },
   ];
 
   const handleTabClick = (id: string) => {
