@@ -50,8 +50,11 @@ Deno.serve(async (req) => {
         }),
       });
       const tokenData = await tokenRes.json();
+      console.log("Google token response status:", tokenRes.status);
+      console.log("Google token response:", JSON.stringify(tokenData));
 
       if (tokenData.error) {
+        console.error("Google OAuth error:", tokenData.error, tokenData.error_description);
         return new Response(
           JSON.stringify({ error: tokenData.error_description || tokenData.error }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
