@@ -4,6 +4,7 @@ import { ptBR } from "date-fns/locale";
 import { CalendarIcon, Save, X, DollarSign, Users, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSales } from "@/context/SalesContext";
+import BulkImportDialog from "@/components/dashboard/BulkImportDialog";
 import { PAYMENT_METHODS, LEAD_SOURCES, calculateNetValue, getFeeDescription, getCloserCommissionRate, SDR_COMMISSION_RATE } from "@/data/mockData";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -100,9 +101,12 @@ const AddSale = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Form */}
           <div className="lg:col-span-2 glass-card gradient-border p-5 sm:p-8 animate-fade-in">
-            <h2 className="text-lg font-bold text-foreground mb-6 tracking-tight">
-              Nova Venda
-            </h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold text-foreground tracking-tight">
+                Nova Venda
+              </h2>
+              <BulkImportDialog />
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Data da Venda */}
