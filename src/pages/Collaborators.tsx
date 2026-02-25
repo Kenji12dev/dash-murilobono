@@ -27,7 +27,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Users, Plus, Save, Loader2, Pencil, UserPlus } from "lucide-react";
+import { Users, Plus, Save, Loader2, Pencil, UserPlus, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import CollaboratorCard from "@/components/dashboard/CollaboratorCard";
 import { toast } from "sonner";
 
@@ -70,6 +80,10 @@ const Collaborators = () => {
   const [newCollabRate, setNewCollabRate] = useState("");
   const [newCollabFixedSalary, setNewCollabFixedSalary] = useState("");
   const [addCollabLoading, setAddCollabLoading] = useState(false);
+
+  // Delete confirmation
+  const [deleteCollab, setDeleteCollab] = useState<Collaborator | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchCollaborators = async () => {
     const { data, error } = await supabase
@@ -162,6 +176,24 @@ const Collaborators = () => {
     }
   };
 
+  const handleDeleteCollab = async () => {
+    if (!deleteCollab) return;
+    setDeleteLoading(true);
+    const { error } = await supabase
+      .from("collaborators")
+      .delete()
+      .eq("id", deleteCollab.id);
+    setDeleteLoading(false);
+    if (error) {
+      toast.error("Erro ao excluir: " + error.message);
+    } else {
+      toast.success("Colaborador excluído!");
+      setDeleteCollab(null);
+      fetchCollaborators();
+    }
+  };
+
+
   // Performance metrics per collaborator
   const getPerformance = (name: string, type: string) => {
     const paidSales = sales.filter(
@@ -228,6 +260,7 @@ const Collaborators = () => {
                         setEditRate(String(c.commission_rate * 100));
                         setEditFixedSalary(String(c.fixed_salary));
                       }}
+                      onDelete={() => setDeleteCollab(c)}
                     />
                   );
                 })}
@@ -243,7 +276,7 @@ const Collaborators = () => {
                       <TableHead>Vendas (Pago)</TableHead>
                       <TableHead>Caixa Gerado</TableHead>
                       <TableHead>Receita Líquida</TableHead>
-                      <TableHead className="w-[80px]">Ações</TableHead>
+                      <TableHead className="w-[100px]">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -258,17 +291,27 @@ const Collaborators = () => {
                           <TableCell>{formatCurrency(perf.caixaGerado)}</TableCell>
                           <TableCell>{formatCurrency(perf.totalRevenue)}</TableCell>
                           <TableCell>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => {
-                                setEditCollab(c);
-                                setEditRate(String(c.commission_rate * 100));
-                                setEditFixedSalary(String(c.fixed_salary));
-                              }}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => {
+                                  setEditCollab(c);
+                                  setEditRate(String(c.commission_rate * 100));
+                                  setEditFixedSalary(String(c.fixed_salary));
+                                }}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => setDeleteCollab(c)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
@@ -301,6 +344,7 @@ const Collaborators = () => {
                     setEditRate(String(c.commission_rate * 100));
                     setEditFixedSalary(String(c.fixed_salary));
                   }}
+                  onDelete={() => setDeleteCollab(c)}
                 />
               );
             })}
@@ -316,7 +360,7 @@ const Collaborators = () => {
                   <TableHead>Vendas (Pago)</TableHead>
                   <TableHead>Caixa Gerado</TableHead>
                   <TableHead>Receita Líquida</TableHead>
-                  <TableHead className="w-[80px]">Ações</TableHead>
+                  <TableHead className="w-[100px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -331,17 +375,27 @@ const Collaborators = () => {
                       <TableCell>{formatCurrency(perf.caixaGerado)}</TableCell>
                       <TableCell>{formatCurrency(perf.totalRevenue)}</TableCell>
                       <TableCell>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => {
-                            setEditCollab(c);
-                            setEditRate(String(c.commission_rate * 100));
-                            setEditFixedSalary(String(c.fixed_salary));
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditCollab(c);
+                              setEditRate(String(c.commission_rate * 100));
+                              setEditFixedSalary(String(c.fixed_salary));
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => setDeleteCollab(c)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -461,6 +515,28 @@ const Collaborators = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!deleteCollab} onOpenChange={(open) => !open && setDeleteCollab(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir colaborador</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir <strong>{deleteCollab?.name}</strong>? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteCollab}
+              disabled={deleteLoading}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

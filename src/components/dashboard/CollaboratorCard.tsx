@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Pencil } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 
 interface CollaboratorCardProps {
   name: string;
@@ -9,6 +9,7 @@ interface CollaboratorCardProps {
   caixaGerado: number;
   totalRevenue: number;
   onEdit: () => void;
+  onDelete: () => void;
 }
 
 const formatPercent = (rate: number) => `${(rate * 100).toFixed(0)}%`;
@@ -23,14 +24,20 @@ const CollaboratorCard = ({
   caixaGerado,
   totalRevenue,
   onEdit,
+  onDelete,
 }: CollaboratorCardProps) => {
   return (
     <div className="rounded-lg border border-border bg-card p-4 space-y-3">
       <div className="flex items-center justify-between">
         <span className="font-medium text-sm text-foreground">{name}</span>
-        <Button size="icon" variant="ghost" onClick={onEdit} className="h-8 w-8">
-          <Pencil className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button size="icon" variant="ghost" onClick={onEdit} className="h-8 w-8">
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button size="icon" variant="ghost" onClick={onDelete} className="h-8 w-8 text-destructive hover:text-destructive">
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-2 text-xs">
         <div>
