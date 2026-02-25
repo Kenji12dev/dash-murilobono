@@ -61,8 +61,8 @@ export const useDashboardMetrics = (
         return true;
       });
 
-    // Status distribution (from all date-filtered, with interactive filters)
-    const statusFiltered = applyFilters(dateFiltered);
+    // Status distribution — exclude "Pendente" (agendamentos) from call status chart
+    const statusFiltered = applyFilters(dateFiltered).filter((s) => s.status !== "Pendente");
     const statusMap = new Map<string, number>();
     statusFiltered.forEach((s) => {
       statusMap.set(s.status, (statusMap.get(s.status) || 0) + 1);
