@@ -232,7 +232,7 @@ const KanbanBoard = () => {
       toast.error("Preencha todos os campos obrigatórios.");
       return;
     }
-    await addSale({
+    const createdSale = await addSale({
       date: newDate,
       clientName: newClient.trim(),
       product: newProduct,
@@ -245,6 +245,8 @@ const KanbanBoard = () => {
       leadSource: newLeadSource,
       notes: newNotes.trim(),
     });
+
+    if (!createdSale) return;
     toast.success("Agendamento criado!");
 
     try {

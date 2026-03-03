@@ -78,7 +78,7 @@ const AddSale = () => {
       return;
     }
 
-    await addSale({
+    const createdSale = await addSale({
       date,
       clientName: clientName.trim(),
       product,
@@ -94,6 +94,7 @@ const AddSale = () => {
       notes: notes.trim(),
     });
 
+    if (!createdSale) return;
     toast.success("Venda salva com sucesso!");
     resetForm();
   };

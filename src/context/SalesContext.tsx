@@ -22,7 +22,7 @@ export interface Sale {
 
 interface SalesContextType {
   sales: Sale[];
-  addSale: (sale: Omit<Sale, "id">) => Promise<void>;
+  addSale: (sale: Omit<Sale, "id">) => Promise<Sale | null>;
   updateSale: (id: string, sale: Partial<Omit<Sale, "id">>) => Promise<void>;
   deleteSale: (id: string) => Promise<void>;
   products: string[];
@@ -143,7 +143,7 @@ export const SalesProvider = ({ children }: { children: ReactNode }) => {
   const closers = Array.from(new Set([...dbClosers, ...defaultClosers]));
   const sdrs = Array.from(new Set([...dbSdrs, ...defaultSdrs]));
 
-  const addSale = async (sale: Omit<Sale, "id">) => {
+  const addSale = async (sale: Omit<Sale, "id">): Promise<Sale | null> => {
     const { data, error } = await supabase
       .from("sales")
       .insert({
@@ -166,10 +166,13 @@ export const SalesProvider = ({ children }: { children: ReactNode }) => {
 
     if (error) {
       console.error("Error adding sale:", error);
-      toast.error("Erro ao salvar venda");
-      return;
+      toast.error("Erro ao salvar venda: " + error.message);
+      return null;
     }
-    setSales((prev) => [mapRow(data), ...prev]);
+
+    const createdSale = mapRow(data);
+    setSales((prev) => [createdSale, ...prev]);
+    return createdSale;
   };
 
   const updateSale = async (id: string, updates: Partial<Omit<Sale, "id">>) => {
