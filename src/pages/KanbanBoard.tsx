@@ -322,6 +322,14 @@ const KanbanBoard = () => {
     setEditSdr(sale.sdr);
     setEditLeadSource(sale.leadSource);
     setEditDate(new Date(sale.date));
+    // Extract time from the date
+    const d = new Date(sale.date);
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    setEditStartTime(`${hh}:${mm}`);
+    // Default end time to 1 hour after start
+    const end = new Date(d.getTime() + 60 * 60 * 1000);
+    setEditEndTime(`${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`);
   };
 
   const saveDetail = () => {
