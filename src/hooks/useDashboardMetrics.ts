@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useSales } from "@/context/SalesContext";
 import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { PAYMENT_METHOD_MAP, LEAD_SOURCE_MAP, CHART_COLORS, calculateHybridCaixa } from "@/data/mockData";
+import { PAYMENT_METHOD_MAP, LEAD_SOURCE_MAP, CHART_COLORS, calculateHybridCaixa, calculateNetValue } from "@/data/mockData";
 
 export interface DashboardFilters {
   closer?: string;
@@ -133,9 +133,17 @@ export const useDashboardMetrics = (
 
     const paymentMap = new Map<string, number>();
     filteredSales.forEach((s) => {
-      paymentMap.set(s.paymentMethod, (paymentMap.get(s.paymentMethod) || 0) + s.netValue);
+      if (s.paymentMethod === "Venda Híbrida" && Array.isArray(s.hybridPayments)) {
+        s.hybridPayments.forEach((hp: any) => {
+          const method = hp.method || "Outro";
+          const net = calculateNetValue(hp.value, method);
+          paymentMap.set(method, (paymentMap.get(method) || 0) + net);
+        });
+      } else {
+        paymentMap.set(s.paymentMethod, (paymentMap.get(s.paymentMethod) || 0) + s.netValue);
+      }
     });
-    const totalPayment = faturamentoLiquido || 1;
+    const totalPayment = Array.from(paymentMap.values()).reduce((a, b) => a + b, 0) || 1;
     const paymentData = Array.from(paymentMap.entries()).map(([method, value]) => ({
       name: PAYMENT_METHOD_MAP[method]?.label || method,
       value,
