@@ -59,7 +59,13 @@ const mapRow = (row: any): Sale => ({
   leadSource: row.lead_source || "",
   downPayment: row.down_payment != null ? Number(row.down_payment) : undefined,
   notes: row.notes || "",
-  hybridPayments: row.hybrid_payments ? (row.hybrid_payments as HybridPayment[]) : undefined,
+  hybridPayments: row.hybrid_payments
+    ? (typeof row.hybrid_payments === "string"
+        ? JSON.parse(row.hybrid_payments)
+        : Array.isArray(row.hybrid_payments)
+          ? row.hybrid_payments
+          : undefined) as HybridPayment[] | undefined
+    : undefined,
 });
 
 export const SalesProvider = ({ children }: { children: ReactNode }) => {

@@ -81,7 +81,7 @@ export const useDashboardMetrics = (
     const faturamentoLiquido = filteredSales.reduce((sum, s) => sum + s.netValue, 0);
     const caixaGerado = filteredSales.reduce((sum, s) => {
       // Venda Híbrida: caixa = soma dos valores não-TMB
-      if (s.paymentMethod === "Venda Híbrida" && s.hybridPayments) {
+      if (s.paymentMethod === "Venda Híbrida" && Array.isArray(s.hybridPayments)) {
         return sum + calculateHybridCaixa(s.hybridPayments);
       }
       // For TMB sales with a down payment, use down payment as cash generated
