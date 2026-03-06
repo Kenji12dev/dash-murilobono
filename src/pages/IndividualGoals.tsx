@@ -13,6 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Target, Save, Loader2, Calendar, CalendarDays, TrendingUp, Users } from "lucide-react";
 import { toast } from "sonner";
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, addWeeks, getWeek, isWithinInterval } from "date-fns";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts";
+import { CHART_COLORS } from "@/data/mockData";
 
 interface Collaborator {
   id: string;
