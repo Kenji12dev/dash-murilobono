@@ -246,6 +246,50 @@ export type Database = {
         }
         Relationships: []
       }
+      sdr_daily_metrics: {
+        Row: {
+          calls_scheduled: number
+          collaborator_id: string
+          conversations_started: number
+          created_at: string
+          date: string
+          first_replies: number
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calls_scheduled?: number
+          collaborator_id: string
+          conversations_started?: number
+          created_at?: string
+          date?: string
+          first_replies?: number
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calls_scheduled?: number
+          collaborator_id?: string
+          conversations_started?: number
+          created_at?: string
+          date?: string
+          first_replies?: number
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sdr_daily_metrics_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
