@@ -515,12 +515,11 @@ const IndividualGoals = () => {
           {/* SDR Section */}
           {sdrs.length > 0 && (
             <div className="space-y-4">
-              <h2 className="text-sm font-semibold tracking-[0.1em] uppercase text-muted-foreground flex items-center gap-2">
-                <Users className="h-4 w-4" /> SDRs — Meta por Agendamentos
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {sdrs.map((s) => renderCollaboratorCard(s, true))}
-              </div>
+              {editing && isAdmin ? (
+                renderEditCards(sdrs, true)
+              ) : (
+                renderGroupedBarChart(sdrs, true, "SDRs — Meta por Agendamentos")
+              )}
               <Card className="glass-card">
                 <CardContent className="pt-6">
                   {renderSummaryTable(sdrs, true)}
@@ -532,12 +531,11 @@ const IndividualGoals = () => {
           {/* Closer Section */}
           {closers.length > 0 && (
             <div className="space-y-4">
-              <h2 className="text-sm font-semibold tracking-[0.1em] uppercase text-muted-foreground flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" /> Closers — Meta por Faturamento
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {closers.map((c) => renderCollaboratorCard(c, false))}
-              </div>
+              {editing && isAdmin ? (
+                renderEditCards(closers, false)
+              ) : (
+                renderGroupedBarChart(closers, false, "Closers — Meta por Faturamento")
+              )}
               <Card className="glass-card">
                 <CardContent className="pt-6">
                   {renderSummaryTable(closers, false)}
@@ -582,9 +580,7 @@ const IndividualGoals = () => {
                   <h2 className="text-sm font-semibold tracking-[0.1em] uppercase text-muted-foreground flex items-center gap-2">
                     <Users className="h-4 w-4" /> SDRs — Meta Semanal
                   </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {sdrs.map((s) => renderCollaboratorCard(s, true))}
-                  </div>
+                  {renderWeeklyCharts(sdrs, true)}
                 </div>
               )}
               {closers.length > 0 && (
@@ -592,9 +588,7 @@ const IndividualGoals = () => {
                   <h2 className="text-sm font-semibold tracking-[0.1em] uppercase text-muted-foreground flex items-center gap-2">
                     <TrendingUp className="h-4 w-4" /> Closers — Meta Semanal
                   </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {closers.map((c) => renderCollaboratorCard(c, false))}
-                  </div>
+                  {renderWeeklyCharts(closers, false)}
                 </div>
               )}
             </>
