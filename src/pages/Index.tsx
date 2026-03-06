@@ -6,7 +6,6 @@ import AddSale from "@/pages/AddSale";
 import SalesDatabase from "@/pages/SalesDatabase";
 import KanbanBoard from "@/pages/KanbanBoard";
 import Collaborators from "@/pages/Collaborators";
-import IndividualGoals from "@/pages/IndividualGoals";
 import Profile from "@/pages/Profile";
 
 const Index = () => {
@@ -20,7 +19,6 @@ const Index = () => {
       {activeTab === "add-sale" && <AddSale />}
       {activeTab === "database" && <SalesDatabase />}
       {activeTab === "kanban" && <KanbanBoard />}
-      {activeTab === "individual-goals" && <IndividualGoals />}
       {activeTab === "collaborators" && role === "admin" && <Collaborators />}
       {activeTab === "profile" && <Profile />}
     </div>
