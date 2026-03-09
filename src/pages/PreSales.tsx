@@ -7,11 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import DateFilter from "@/components/dashboard/DateFilter";
 import { toast } from "sonner";
 import { format, startOfMonth, endOfDay, parseISO, isWithinInterval, startOfDay } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from "recharts";
-import { MessageSquare, Reply, Phone, Save, CalendarDays, TrendingUp, Pencil } from "lucide-react";
+import { MessageSquare, Reply, Phone, Save, CalendarDays, TrendingUp, Pencil, Target } from "lucide-react";
 
 interface SdrMetric {
   id: string;
@@ -21,6 +23,16 @@ interface SdrMetric {
   conversations_started: number;
   first_replies: number;
   calls_scheduled: number;
+}
+
+interface SdrGoal {
+  id: string;
+  collaborator_id: string;
+  month: number;
+  year: number;
+  conversations_goal: number;
+  replies_goal: number;
+  calls_goal: number;
 }
 
 interface Collaborator {
@@ -36,6 +48,7 @@ const PreSales = () => {
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [myCollaborator, setMyCollaborator] = useState<Collaborator | null>(null);
   const [allMetrics, setAllMetrics] = useState<SdrMetric[]>([]);
+  const [sdrGoals, setSdrGoals] = useState<SdrGoal[]>([]);
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [conversationsStarted, setConversationsStarted] = useState(0);
   const [firstReplies, setFirstReplies] = useState(0);
@@ -43,6 +56,9 @@ const PreSales = () => {
   const [saving, setSaving] = useState(false);
   const [filterStart, setFilterStart] = useState<Date>(startOfMonth(new Date()));
   const [filterEnd, setFilterEnd] = useState<Date>(endOfDay(new Date()));
+  const [goalsDialogOpen, setGoalsDialogOpen] = useState(false);
+  const [editingGoals, setEditingGoals] = useState<Record<string, { conversations: number; replies: number; calls: number }>>({});
+  const [savingGoals, setSavingGoals] = useState(false);
 
   // Fetch SDR collaborators
   useEffect(() => {
