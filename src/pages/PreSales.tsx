@@ -288,6 +288,65 @@ const PreSales = () => {
         </Card>
       )}
 
+      {/* Daily History Table */}
+      {(isSDR || role === "admin") && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Histórico de Registros Diários</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const sdrMap = Object.fromEntries(collaborators.map((c) => [c.id, c.name]));
+              const myEntries = isSDR
+                ? allMetrics.filter((m) => m.collaborator_id === myCollaborator!.id).sort((a, b) => b.date.localeCompare(a.date))
+                : allMetrics.sort((a, b) => b.date.localeCompare(a.date));
+
+              if (myEntries.length === 0) {
+                return <p className="text-muted-foreground text-sm text-center py-6">Nenhum registro encontrado no período.</p>;
+              }
+
+              return (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      {role === "admin" && !isSDR && <TableHead>SDR</TableHead>}
+                      <TableHead>Data</TableHead>
+                      <TableHead className="text-center">Conversas</TableHead>
+                      <TableHead className="text-center">Respostas</TableHead>
+                      <TableHead className="text-center">Calls</TableHead>
+                      <TableHead className="text-center">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {myEntries.map((entry) => (
+                      <TableRow key={entry.id} className={selectedDate === entry.date && ((isSDR && entry.collaborator_id === myCollaborator?.id) || false) ? "bg-primary/5" : ""}>
+                        {role === "admin" && !isSDR && (
+                          <TableCell className="font-medium">{sdrMap[entry.collaborator_id] || "—"}</TableCell>
+                        )}
+                        <TableCell>{format(parseISO(entry.date), "dd/MM/yyyy")}</TableCell>
+                        <TableCell className="text-center">{entry.conversations_started}</TableCell>
+                        <TableCell className="text-center">{entry.first_replies}</TableCell>
+                        <TableCell className="text-center">{entry.calls_scheduled}</TableCell>
+                        <TableCell className="text-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedDate(entry.date)}
+                            className="text-muted-foreground hover:text-primary"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              );
+            })()}
+          </CardContent>
+        </Card>
+      )}
+
       {!isSDR && role === "admin" && (
         <Card>
           <CardContent className="py-6">
