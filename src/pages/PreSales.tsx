@@ -11,7 +11,8 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import DateFilter from "@/components/dashboard/DateFilter";
 import { toast } from "sonner";
-import { format, startOfMonth, endOfDay, parseISO, isWithinInterval, startOfDay } from "date-fns";
+import { format, startOfMonth, endOfDay, parseISO, isWithinInterval, startOfDay, getISOWeek, startOfWeek, endOfWeek, addWeeks, getWeeksInMonth, startOfISOWeek } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from "recharts";
 import { MessageSquare, Reply, Phone, Save, CalendarDays, TrendingUp, Pencil, Target } from "lucide-react";
 
