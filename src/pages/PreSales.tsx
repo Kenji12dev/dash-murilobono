@@ -233,7 +233,7 @@ const PreSales = () => {
     for (const collab of collaborators) {
       const vals = editingGoals[collab.id];
       if (!vals) continue;
-      const existing = sdrGoals.find((g) => g.collaborator_id === collab.id && g.month === month && g.year === year);
+      const existing = sdrGoals.find((g) => g.collaborator_id === collab.id && g.month === month && g.year === year && g.week_number === selectedWeek);
 
       if (existing) {
         await supabase
@@ -251,6 +251,7 @@ const PreSales = () => {
             collaborator_id: collab.id,
             month,
             year,
+            week_number: selectedWeek,
             conversations_goal: vals.conversations,
             replies_goal: vals.replies,
             calls_goal: vals.calls,
