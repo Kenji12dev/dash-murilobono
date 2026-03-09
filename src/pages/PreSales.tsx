@@ -488,27 +488,12 @@ const PreSales = () => {
                   const scheduleRate = replies > 0 ? ((calls / replies) * 100).toFixed(1) : "—";
                   const conversionRate = total > 0 ? ((pago / total) * 100).toFixed(1) : "—";
 
-                  const month = filterStart.getMonth() + 1;
-                  const year = filterStart.getFullYear();
-                  const goal = sdrGoals.find((g) => g.collaborator_id === collab.id && g.month === month && g.year === year && g.week_number === selectedWeek);
-
-                  const renderWithGoal = (actual: number, goalVal: number | undefined) => {
-                    if (!goalVal || goalVal === 0) return <span>{actual}</span>;
-                    const pct = Math.min((actual / goalVal) * 100, 100);
-                    return (
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="text-xs">{actual}/{goalVal}</span>
-                        <Progress value={pct} className="h-1.5 w-16" />
-                      </div>
-                    );
-                  };
-
                   return (
                     <TableRow key={collab.id}>
                       <TableCell className="font-medium">{collab.name}</TableCell>
-                      <TableCell className="text-center">{renderWithGoal(conversations, goal?.conversations_goal)}</TableCell>
-                      <TableCell className="text-center">{renderWithGoal(replies, goal?.replies_goal)}</TableCell>
-                      <TableCell className="text-center">{renderWithGoal(calls, goal?.calls_goal)}</TableCell>
+                      <TableCell className="text-center">{conversations}</TableCell>
+                      <TableCell className="text-center">{replies}</TableCell>
+                      <TableCell className="text-center">{calls}</TableCell>
                       <TableCell className="text-center">
                         <span className={replyRate !== "—" ? "text-primary font-medium" : "text-muted-foreground"}>
                           {replyRate !== "—" ? `${replyRate}%` : "—"}
