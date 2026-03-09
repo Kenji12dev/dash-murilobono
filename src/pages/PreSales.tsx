@@ -59,7 +59,7 @@ const PreSales = () => {
   const [filterStart, setFilterStart] = useState<Date>(startOfMonth(new Date()));
   const [filterEnd, setFilterEnd] = useState<Date>(endOfDay(new Date()));
   const [goalsDialogOpen, setGoalsDialogOpen] = useState(false);
-  const [editingGoals, setEditingGoals] = useState<Record<string, { conversations: number; replies: number; calls: number }>>({});
+  const [editingGoals, setEditingGoals] = useState<Record<string, { calls: number }>>({});
   const [savingGoals, setSavingGoals] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState(getISOWeek(new Date()));
 
