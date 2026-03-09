@@ -188,7 +188,7 @@ const PreSales = () => {
     const year = filterStart.getFullYear();
     const initial: Record<string, { calls: number }> = {};
     collaborators.forEach((c) => {
-      const goal = sdrGoals.find((g) => g.collaborator_id === c.id && g.month === month && g.year === year && g.week_number === selectedWeek);
+      const goal = sdrGoals.find((g) => g.collaborator_id === c.id && g.month === month && g.year === year);
       initial[c.id] = {
         calls: goal?.calls_goal || 0,
       };
