@@ -477,7 +477,7 @@ const PreSales = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Target className="h-5 w-5 text-primary" />
-              Definir Metas dos SDRs — {format(filterStart, "MM/yyyy")}
+              Definir Metas dos SDRs — Semana {selectedWeek} ({format(filterStart, "MM/yyyy")})
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 max-h-[60vh] overflow-y-auto">
