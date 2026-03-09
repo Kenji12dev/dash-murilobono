@@ -59,7 +59,7 @@ const PreSales = () => {
   const [filterStart, setFilterStart] = useState<Date>(startOfMonth(new Date()));
   const [filterEnd, setFilterEnd] = useState<Date>(endOfDay(new Date()));
   const [goalsDialogOpen, setGoalsDialogOpen] = useState(false);
-  const [editingGoals, setEditingGoals] = useState<Record<string, { conversations: number; replies: number; calls: number }>>({});
+  const [editingGoals, setEditingGoals] = useState<Record<string, { calls: number }>>({});
   const [savingGoals, setSavingGoals] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState(getISOWeek(new Date()));
 
@@ -212,12 +212,10 @@ const PreSales = () => {
   const openGoalsDialog = () => {
     const month = filterStart.getMonth() + 1;
     const year = filterStart.getFullYear();
-    const initial: Record<string, { conversations: number; replies: number; calls: number }> = {};
+    const initial: Record<string, { calls: number }> = {};
     collaborators.forEach((c) => {
       const goal = sdrGoals.find((g) => g.collaborator_id === c.id && g.month === month && g.year === year && g.week_number === selectedWeek);
       initial[c.id] = {
-        conversations: goal?.conversations_goal || 0,
-        replies: goal?.replies_goal || 0,
         calls: goal?.calls_goal || 0,
       };
     });
@@ -239,8 +237,6 @@ const PreSales = () => {
         await supabase
           .from("sdr_goals")
           .update({
-            conversations_goal: vals.conversations,
-            replies_goal: vals.replies,
             calls_goal: vals.calls,
           } as any)
           .eq("id", existing.id);
@@ -252,8 +248,6 @@ const PreSales = () => {
             month,
             year,
             week_number: selectedWeek,
-            conversations_goal: vals.conversations,
-            replies_goal: vals.replies,
             calls_goal: vals.calls,
           } as any);
       }
@@ -359,7 +353,7 @@ const PreSales = () => {
         const weekLabel = availableWeeks.find(w => w.weekNum === selectedWeek)?.label || `Sem ${selectedWeek}`;
         const hasAnyGoal = collaborators.some((c) => {
           const goal = sdrGoals.find((g) => g.collaborator_id === c.id && g.month === month && g.year === year && g.week_number === selectedWeek);
-          return goal && (goal.conversations_goal > 0 || goal.replies_goal > 0 || goal.calls_goal > 0);
+          return goal && goal.calls_goal > 0;
         });
 
         if (!hasAnyGoal && role !== "admin") return null;
@@ -394,39 +388,25 @@ const PreSales = () => {
             {hasAnyGoal ? (
               <div className="space-y-6 mt-4">
                 {collaborators.map((collab) => {
-                  const goal = sdrGoals.find((g) => g.collaborator_id === collab.id && g.month === month && g.year === year && g.week_number === selectedWeek);
-                  if (!goal || (goal.conversations_goal === 0 && goal.replies_goal === 0 && goal.calls_goal === 0)) return null;
+                   const goal = sdrGoals.find((g) => g.collaborator_id === collab.id && g.month === month && g.year === year && g.week_number === selectedWeek);
+                  if (!goal || goal.calls_goal === 0) return null;
 
                   const metrics = metricsChartData.find((m) => m.name === collab.name);
-                  const conversations = metrics?.["Conversas Iniciadas"] || 0;
-                  const replies = metrics?.["Respostas"] || 0;
                   const calls = metrics?.["Calls Marcadas"] || 0;
-
-                  const items = [
-                    { label: "Conversas", actual: conversations, target: goal.conversations_goal },
-                    { label: "Respostas", actual: replies, target: goal.replies_goal },
-                    { label: "Calls Marcadas", actual: calls, target: goal.calls_goal },
-                  ].filter((i) => i.target > 0);
+                  const pct = Math.min((calls / goal.calls_goal) * 100, 100);
 
                   return (
                     <div key={collab.id}>
                       <p className="text-sm font-semibold text-foreground mb-3">{collab.name}</p>
-                      <div className="space-y-3">
-                        {items.map((item) => {
-                          const pct = Math.min((item.actual / item.target) * 100, 100);
-                          return (
-                            <div key={item.label} className="space-y-1.5">
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="text-muted-foreground">{item.label}</span>
-                                <span className="font-semibold text-foreground">
-                                  {item.actual} / {item.target}
-                                </span>
-                              </div>
-                              <Progress value={pct} className="h-3" />
-                              <p className="text-xs text-muted-foreground text-right">{pct.toFixed(1)}%</p>
-                            </div>
-                          );
-                        })}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Calls Marcadas</span>
+                          <span className="font-semibold text-foreground">
+                            {calls} / {goal.calls_goal}
+                          </span>
+                        </div>
+                        <Progress value={pct} className="h-3" />
+                        <p className="text-xs text-muted-foreground text-right">{pct.toFixed(1)}%</p>
                       </div>
                     </div>
                   );
@@ -536,43 +516,17 @@ const PreSales = () => {
             {collaborators.map((collab) => (
               <div key={collab.id} className="border border-border rounded-lg p-4 space-y-3">
                 <p className="font-medium text-foreground">{collab.name}</p>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Conversas</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={editingGoals[collab.id]?.conversations ?? 0}
-                      onChange={(e) => setEditingGoals((prev) => ({
-                        ...prev,
-                        [collab.id]: { ...prev[collab.id], conversations: Number(e.target.value) },
-                      }))}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Respostas</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={editingGoals[collab.id]?.replies ?? 0}
-                      onChange={(e) => setEditingGoals((prev) => ({
-                        ...prev,
-                        [collab.id]: { ...prev[collab.id], replies: Number(e.target.value) },
-                      }))}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Calls</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={editingGoals[collab.id]?.calls ?? 0}
-                      onChange={(e) => setEditingGoals((prev) => ({
-                        ...prev,
-                        [collab.id]: { ...prev[collab.id], calls: Number(e.target.value) },
-                      }))}
-                    />
-                  </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Calls Marcadas</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={editingGoals[collab.id]?.calls ?? 0}
+                    onChange={(e) => setEditingGoals((prev) => ({
+                      ...prev,
+                      [collab.id]: { calls: Number(e.target.value) },
+                    }))}
+                  />
                 </div>
               </div>
             ))}
