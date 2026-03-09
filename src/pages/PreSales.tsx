@@ -388,19 +388,12 @@ const PreSales = () => {
             {hasAnyGoal ? (
               <div className="space-y-6 mt-4">
                 {collaborators.map((collab) => {
-                  const goal = sdrGoals.find((g) => g.collaborator_id === collab.id && g.month === month && g.year === year && g.week_number === selectedWeek);
-                  if (!goal || (goal.conversations_goal === 0 && goal.replies_goal === 0 && goal.calls_goal === 0)) return null;
+                   const goal = sdrGoals.find((g) => g.collaborator_id === collab.id && g.month === month && g.year === year && g.week_number === selectedWeek);
+                  if (!goal || goal.calls_goal === 0) return null;
 
                   const metrics = metricsChartData.find((m) => m.name === collab.name);
-                  const conversations = metrics?.["Conversas Iniciadas"] || 0;
-                  const replies = metrics?.["Respostas"] || 0;
                   const calls = metrics?.["Calls Marcadas"] || 0;
-
-                  const items = [
-                    { label: "Conversas", actual: conversations, target: goal.conversations_goal },
-                    { label: "Respostas", actual: replies, target: goal.replies_goal },
-                    { label: "Calls Marcadas", actual: calls, target: goal.calls_goal },
-                  ].filter((i) => i.target > 0);
+                  const pct = Math.min((calls / goal.calls_goal) * 100, 100);
 
                   return (
                     <div key={collab.id}>
