@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from "recharts";
-import { MessageSquare, Reply, Phone, Save, CalendarDays } from "lucide-react";
+import { MessageSquare, Reply, Phone, Save, CalendarDays, TrendingUp } from "lucide-react";
 
 interface SdrMetric {
   id: string;
