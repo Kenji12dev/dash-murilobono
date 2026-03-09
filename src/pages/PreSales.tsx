@@ -7,15 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import DateFilter from "@/components/dashboard/DateFilter";
 import { toast } from "sonner";
-import { format, startOfMonth, endOfMonth, parseISO, isWithinInterval, startOfDay, endOfDay } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { format, startOfMonth, endOfDay, parseISO, isWithinInterval, startOfDay } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from "recharts";
-import { MessageSquare, Reply, Phone, Save, CalendarDays, TrendingUp, CalendarIcon, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { MessageSquare, Reply, Phone, Save, CalendarDays, TrendingUp } from "lucide-react";
 
 interface SdrMetric {
   id: string;
@@ -45,9 +41,8 @@ const PreSales = () => {
   const [firstReplies, setFirstReplies] = useState(0);
   const [callsScheduled, setCallsScheduled] = useState(0);
   const [saving, setSaving] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [filterStartDate, setFilterStartDate] = useState<Date | undefined>(undefined);
+  const [filterStart, setFilterStart] = useState<Date>(startOfMonth(new Date()));
+  const [filterEnd, setFilterEnd] = useState<Date>(endOfDay(new Date()));
   const [filterEndDate, setFilterEndDate] = useState<Date | undefined>(undefined);
 
   // Fetch SDR collaborators
