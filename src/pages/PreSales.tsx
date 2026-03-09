@@ -8,11 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from "date-fns";
+import { format, startOfMonth, endOfMonth, parseISO, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from "recharts";
-import { MessageSquare, Reply, Phone, Save, CalendarDays, TrendingUp } from "lucide-react";
+import { MessageSquare, Reply, Phone, Save, CalendarDays, TrendingUp, CalendarIcon, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface SdrMetric {
   id: string;
@@ -44,6 +47,8 @@ const PreSales = () => {
   const [saving, setSaving] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [filterStartDate, setFilterStartDate] = useState<Date | undefined>(undefined);
+  const [filterEndDate, setFilterEndDate] = useState<Date | undefined>(undefined);
 
   // Fetch SDR collaborators
   useEffect(() => {
@@ -149,24 +154,46 @@ const PreSales = () => {
     setSaving(false);
   };
 
+  // Filter metrics by date range
+  const filteredMetrics = useMemo(() => {
+    if (!filterStartDate && !filterEndDate) return allMetrics;
+    return allMetrics.filter((m) => {
+      const d = parseISO(m.date);
+      if (filterStartDate && filterEndDate) {
+        return isWithinInterval(d, { start: startOfDay(filterStartDate), end: endOfDay(filterEndDate) });
+      }
+      if (filterStartDate) return d >= startOfDay(filterStartDate);
+      if (filterEndDate) return d <= endOfDay(filterEndDate);
+      return true;
+    });
+  }, [allMetrics, filterStartDate, filterEndDate]);
+
+  // Filter sales by date range
+  const filteredSales = useMemo(() => {
+    const monthStart = startOfMonth(new Date(selectedYear, selectedMonth));
+    const monthEnd = endOfMonth(new Date(selectedYear, selectedMonth));
+    return sales.filter((s) => {
+      const d = new Date(s.date);
+      if (d < monthStart || d > monthEnd) return false;
+      if (filterStartDate && filterEndDate) {
+        return isWithinInterval(d, { start: startOfDay(filterStartDate), end: endOfDay(filterEndDate) });
+      }
+      if (filterStartDate) return d >= startOfDay(filterStartDate);
+      if (filterEndDate) return d <= endOfDay(filterEndDate);
+      return true;
+    });
+  }, [sales, selectedMonth, selectedYear, filterStartDate, filterEndDate]);
+
   // Build comparison chart data: appointments from sales (Kanban integration)
   const appointmentChartData = useMemo(() => {
-    const start = startOfMonth(new Date(selectedYear, selectedMonth));
-    const end = endOfMonth(new Date(selectedYear, selectedMonth));
     const sdrNames = collaborators.map((c) => c.name);
-
-    // Count sales (appointments) per SDR for the selected month
-    const monthlySales = sales.filter((s) => {
-      const d = new Date(s.date);
-      return d >= start && d <= end;
-    });
 
     const sdrCounts: Record<string, { total: number; pago: number; pendente: number; followUp: number; loss: number }> = {};
     sdrNames.forEach((name) => {
       sdrCounts[name] = { total: 0, pago: 0, pendente: 0, followUp: 0, loss: 0 };
     });
 
-    monthlySales.forEach((sale) => {
+    filteredSales.forEach((sale) => {
       if (sdrCounts[sale.sdr]) {
         sdrCounts[sale.sdr].total++;
         const status = sale.status.toLowerCase();
@@ -185,7 +212,7 @@ const PreSales = () => {
       "Follow Up": sdrCounts[name]?.followUp || 0,
       Loss: sdrCounts[name]?.loss || 0,
     }));
-  }, [sales, collaborators, selectedMonth, selectedYear]);
+  }, [filteredSales, collaborators]);
 
   // Build SDR metrics comparison chart
   const metricsChartData = useMemo(() => {
@@ -197,7 +224,7 @@ const PreSales = () => {
       totals[name] = { conversations: 0, replies: 0, calls: 0 };
     });
 
-    allMetrics.forEach((m) => {
+    filteredMetrics.forEach((m) => {
       const name = sdrMap[m.collaborator_id];
       if (name && totals[name]) {
         totals[name].conversations += m.conversations_started;
@@ -212,7 +239,7 @@ const PreSales = () => {
       "Respostas": totals[name]?.replies || 0,
       "Calls Marcadas": totals[name]?.calls || 0,
     }));
-  }, [allMetrics, collaborators]);
+  }, [filteredMetrics, collaborators]);
 
   const months = Array.from({ length: 12 }, (_, i) => ({
     value: i,
@@ -223,9 +250,51 @@ const PreSales = () => {
 
   return (
     <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10 py-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-foreground">Pré-vendas</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Date range filter */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className={cn("gap-1.5 text-xs", filterStartDate && "border-primary text-primary")}>
+                <CalendarIcon className="h-3.5 w-3.5" />
+                {filterStartDate ? format(filterStartDate, "dd/MM", { locale: ptBR }) : "De"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={filterStartDate}
+                onSelect={setFilterStartDate}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className={cn("gap-1.5 text-xs", filterEndDate && "border-primary text-primary")}>
+                <CalendarIcon className="h-3.5 w-3.5" />
+                {filterEndDate ? format(filterEndDate, "dd/MM", { locale: ptBR }) : "Até"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={filterEndDate}
+                onSelect={setFilterEndDate}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+          {(filterStartDate || filterEndDate) && (
+            <Button variant="ghost" size="sm" onClick={() => { setFilterStartDate(undefined); setFilterEndDate(undefined); }} className="text-xs gap-1 text-muted-foreground hover:text-destructive">
+              <X className="h-3.5 w-3.5" />
+              Limpar
+            </Button>
+          )}
+
           <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
             <SelectTrigger className="w-[140px]">
               <SelectValue />
