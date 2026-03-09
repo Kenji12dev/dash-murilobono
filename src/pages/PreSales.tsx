@@ -353,7 +353,7 @@ const PreSales = () => {
         const weekLabel = availableWeeks.find(w => w.weekNum === selectedWeek)?.label || `Sem ${selectedWeek}`;
         const hasAnyGoal = collaborators.some((c) => {
           const goal = sdrGoals.find((g) => g.collaborator_id === c.id && g.month === month && g.year === year && g.week_number === selectedWeek);
-          return goal && (goal.conversations_goal > 0 || goal.replies_goal > 0 || goal.calls_goal > 0);
+          return goal && goal.calls_goal > 0;
         });
 
         if (!hasAnyGoal && role !== "admin") return null;
