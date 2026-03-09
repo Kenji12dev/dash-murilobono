@@ -92,6 +92,21 @@ const PreSales = () => {
     fetchMetrics();
   }, [filterStart, filterEnd]);
 
+  // Fetch SDR goals for current month
+  useEffect(() => {
+    const fetchGoals = async () => {
+      const month = filterStart.getMonth() + 1;
+      const year = filterStart.getFullYear();
+      const { data } = await supabase
+        .from("sdr_goals")
+        .select("*")
+        .eq("month", month)
+        .eq("year", year);
+      if (data) setSdrGoals(data as SdrGoal[]);
+    };
+    fetchGoals();
+  }, [filterStart]);
+
   // Load existing data for selected date
   useEffect(() => {
     if (!myCollaborator) return;
