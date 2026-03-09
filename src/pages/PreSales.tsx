@@ -212,12 +212,10 @@ const PreSales = () => {
   const openGoalsDialog = () => {
     const month = filterStart.getMonth() + 1;
     const year = filterStart.getFullYear();
-    const initial: Record<string, { conversations: number; replies: number; calls: number }> = {};
+    const initial: Record<string, { calls: number }> = {};
     collaborators.forEach((c) => {
       const goal = sdrGoals.find((g) => g.collaborator_id === c.id && g.month === month && g.year === year && g.week_number === selectedWeek);
       initial[c.id] = {
-        conversations: goal?.conversations_goal || 0,
-        replies: goal?.replies_goal || 0,
         calls: goal?.calls_goal || 0,
       };
     });
