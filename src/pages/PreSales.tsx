@@ -179,7 +179,63 @@ const PreSales = () => {
     setSaving(false);
   };
 
-  // Filter sales by date range
+  const openGoalsDialog = () => {
+    const month = filterStart.getMonth() + 1;
+    const year = filterStart.getFullYear();
+    const initial: Record<string, { conversations: number; replies: number; calls: number }> = {};
+    collaborators.forEach((c) => {
+      const goal = sdrGoals.find((g) => g.collaborator_id === c.id && g.month === month && g.year === year);
+      initial[c.id] = {
+        conversations: goal?.conversations_goal || 0,
+        replies: goal?.replies_goal || 0,
+        calls: goal?.calls_goal || 0,
+      };
+    });
+    setEditingGoals(initial);
+    setGoalsDialogOpen(true);
+  };
+
+  const handleSaveGoals = async () => {
+    setSavingGoals(true);
+    const month = filterStart.getMonth() + 1;
+    const year = filterStart.getFullYear();
+
+    for (const collab of collaborators) {
+      const vals = editingGoals[collab.id];
+      if (!vals) continue;
+      const existing = sdrGoals.find((g) => g.collaborator_id === collab.id && g.month === month && g.year === year);
+
+      if (existing) {
+        await supabase
+          .from("sdr_goals")
+          .update({
+            conversations_goal: vals.conversations,
+            replies_goal: vals.replies,
+            calls_goal: vals.calls,
+          } as any)
+          .eq("id", existing.id);
+      } else {
+        await supabase
+          .from("sdr_goals")
+          .insert({
+            collaborator_id: collab.id,
+            month,
+            year,
+            conversations_goal: vals.conversations,
+            replies_goal: vals.replies,
+            calls_goal: vals.calls,
+          } as any);
+      }
+    }
+
+    // Refetch
+    const { data } = await supabase.from("sdr_goals").select("*").eq("month", month).eq("year", year);
+    if (data) setSdrGoals(data as SdrGoal[]);
+    setSavingGoals(false);
+    setGoalsDialogOpen(false);
+    toast.success("Metas salvas!");
+  };
+
   const filteredSales = useMemo(() => {
     return sales.filter((s) => {
       const d = new Date(s.date);
