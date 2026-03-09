@@ -290,6 +290,50 @@ export type Database = {
           },
         ]
       }
+      sdr_goals: {
+        Row: {
+          calls_goal: number
+          collaborator_id: string
+          conversations_goal: number
+          created_at: string
+          id: string
+          month: number
+          replies_goal: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          calls_goal?: number
+          collaborator_id: string
+          conversations_goal?: number
+          created_at?: string
+          id?: string
+          month: number
+          replies_goal?: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          calls_goal?: number
+          collaborator_id?: string
+          conversations_goal?: number
+          created_at?: string
+          id?: string
+          month?: number
+          replies_goal?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sdr_goals_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
