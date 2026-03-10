@@ -336,12 +336,7 @@ const PreSales = () => {
           differenceInCalendarDays(today, monthStart) + 1,
           totalDays
         );
-        const hasAnyGoal = collaborators.some((c) => {
-          const goal = sdrGoals.find((g) => g.collaborator_id === c.id && g.month === month && g.year === year);
-          return goal && goal.calls_goal > 0;
-        });
-
-        if (!hasAnyGoal && role !== "admin") return null;
+        if (collaborators.length === 0) return null;
 
         return (
           <div className="glass-card gradient-border p-6 opacity-0 animate-fade-in" style={{ animationDelay: "100ms" }}>
@@ -359,19 +354,19 @@ const PreSales = () => {
               )}
             </div>
 
-            {hasAnyGoal ? (
+        {collaborators.length > 0 ? (
               <div className="space-y-6 mt-4">
                 {collaborators.map((collab) => {
                   const goal = sdrGoals.find((g) => g.collaborator_id === collab.id && g.month === month && g.year === year);
-                  if (!goal || goal.calls_goal === 0) return null;
+                  const callsGoal = goal?.calls_goal || 0;
 
                   const metrics = metricsChartData.find((m) => m.name === collab.name);
                   const calls = metrics?.["Calls Marcadas"] || 0;
-                  const pct = Math.min((calls / goal.calls_goal) * 100, 100);
-                  const idealPace = Math.round((goal.calls_goal / totalDays) * daysPassed);
+                  const pct = callsGoal > 0 ? Math.min((calls / callsGoal) * 100, 100) : 0;
+                  const idealPace = callsGoal > 0 ? Math.round((callsGoal / totalDays) * daysPassed) : 0;
                   const dailyAvg = daysPassed > 0 ? (calls / daysPassed).toFixed(1) : "0.0";
-                  const needsPerDay = daysPassed < totalDays 
-                    ? Math.max(0, Math.ceil((goal.calls_goal - calls) / (totalDays - daysPassed)))
+                  const needsPerDay = callsGoal > 0 && daysPassed < totalDays 
+                    ? Math.max(0, Math.ceil((callsGoal - calls) / (totalDays - daysPassed)))
                     : 0;
 
                   return (
@@ -384,17 +379,24 @@ const PreSales = () => {
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-muted-foreground">Calls Marcadas</span>
                           <span className="font-semibold text-foreground">
-                            {calls} / {goal.calls_goal}
+                            {calls} / {callsGoal || "—"}
                           </span>
                         </div>
                         <div className="relative">
-                          <Progress value={pct} className="h-3" />
-                          {/* Ideal pace marker */}
-                          <div 
-                            className="absolute top-0 h-3 w-0.5 bg-foreground/40"
-                            style={{ left: `${Math.min((idealPace / goal.calls_goal) * 100, 100)}%` }}
-                            title={`Ritmo ideal: ${idealPace}`}
-                          />
+                        {callsGoal > 0 && (
+                          <>
+                            <Progress value={pct} className="h-3" />
+                            {/* Ideal pace marker */}
+                            <div 
+                              className="absolute top-0 h-3 w-0.5 bg-foreground/40"
+                              style={{ left: `${Math.min((idealPace / callsGoal) * 100, 100)}%` }}
+                              title={`Ritmo ideal: ${idealPace}`}
+                            />
+                          </>
+                        )}
+                        {callsGoal === 0 && (
+                          <p className="text-xs text-muted-foreground italic">Sem meta definida</p>
+                        )}
                         </div>
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span>
