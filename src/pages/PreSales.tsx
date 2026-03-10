@@ -383,13 +383,20 @@ const PreSales = () => {
                           </span>
                         </div>
                         <div className="relative">
-                          <Progress value={pct} className="h-3" />
-                          {/* Ideal pace marker */}
-                          <div 
-                            className="absolute top-0 h-3 w-0.5 bg-foreground/40"
-                            style={{ left: `${Math.min((idealPace / goal.calls_goal) * 100, 100)}%` }}
-                            title={`Ritmo ideal: ${idealPace}`}
-                          />
+                        {callsGoal > 0 && (
+                          <>
+                            <Progress value={pct} className="h-3" />
+                            {/* Ideal pace marker */}
+                            <div 
+                              className="absolute top-0 h-3 w-0.5 bg-foreground/40"
+                              style={{ left: `${Math.min((idealPace / callsGoal) * 100, 100)}%` }}
+                              title={`Ritmo ideal: ${idealPace}`}
+                            />
+                          </>
+                        )}
+                        {callsGoal === 0 && (
+                          <p className="text-xs text-muted-foreground italic">Sem meta definida</p>
+                        )}
                         </div>
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span>
