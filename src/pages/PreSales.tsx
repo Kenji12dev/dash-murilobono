@@ -379,7 +379,7 @@ const PreSales = () => {
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-muted-foreground">Calls Marcadas</span>
                           <span className="font-semibold text-foreground">
-                            {calls} / {goal.calls_goal}
+                            {calls} / {callsGoal || "—"}
                           </span>
                         </div>
                         <div className="relative">
