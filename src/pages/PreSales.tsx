@@ -336,12 +336,7 @@ const PreSales = () => {
           differenceInCalendarDays(today, monthStart) + 1,
           totalDays
         );
-        const hasAnyGoal = collaborators.some((c) => {
-          const goal = sdrGoals.find((g) => g.collaborator_id === c.id && g.month === month && g.year === year);
-          return goal && goal.calls_goal > 0;
-        });
-
-        if (!hasAnyGoal && role !== "admin") return null;
+        if (collaborators.length === 0) return null;
 
         return (
           <div className="glass-card gradient-border p-6 opacity-0 animate-fade-in" style={{ animationDelay: "100ms" }}>
