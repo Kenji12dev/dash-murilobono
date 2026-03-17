@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
 
     const event = {
       summary: `📞 ${client_name} — ${product}`,
-      description: `Agendamento: ${client_name}\nProduto: ${product}\n${notes ? `Notas: ${notes}` : ""}`,
+      description: `Agendamento: ${client_name}\nProduto: ${product}\nSDR: ${sdr || "N/A"}\n${notes ? `Notas: ${notes}` : ""}`,
       start: {
         dateTime: startDateTime,
         timeZone: "America/Sao_Paulo",
