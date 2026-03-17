@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { collaborator_name, client_name, product, date, start_time, end_time, notes } = body;
+    const { collaborator_name, client_name, product, date, start_time, end_time, notes, sdr } = body;
     console.log("Received request:", JSON.stringify({ collaborator_name, client_name, product, date, start_time, end_time }));
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
 
     const event = {
       summary: `📞 ${client_name} — ${product}`,
-      description: `Agendamento: ${client_name}\nProduto: ${product}\n${notes ? `Notas: ${notes}` : ""}`,
+      description: `Agendamento: ${client_name}\nProduto: ${product}\nSDR: ${sdr || "N/A"}\n${notes ? `Notas: ${notes}` : ""}`,
       start: {
         dateTime: startDateTime,
         timeZone: "America/Sao_Paulo",
