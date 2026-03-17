@@ -294,6 +294,7 @@ const KanbanBoard = () => {
           start_time: newStartTime,
           end_time: newEndTime,
           notes: newNotes.trim(),
+          sdr: newSdr,
         },
       });
       console.log("Calendar response:", { data, error });
