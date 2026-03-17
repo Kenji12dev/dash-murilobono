@@ -212,6 +212,7 @@ const Agenda = () => {
           start_time: newStartTime,
           end_time: newEndTime,
           notes: newNotes.trim(),
+          sdr: newSdr,
         },
       });
       if (data?.success) {
