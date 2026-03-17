@@ -1,17 +1,21 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { CalendarDays, ChevronLeft, ChevronRight, Loader2, User, Plus, Pencil, Trash2, X } from "lucide-react";
+import { useSales } from "@/context/SalesContext";
+import { CalendarDays, ChevronLeft, ChevronRight, Loader2, User, Plus, Pencil, Trash2, Save, X, CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { format, addDays, startOfWeek, endOfWeek, isSameDay, parseISO, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { LEAD_SOURCES } from "@/data/mockData";
 
 interface CalendarEvent {
   id: string;
@@ -28,15 +32,6 @@ interface Collaborator {
   id: string;
   name: string;
   type: string;
-}
-
-interface EventForm {
-  summary: string;
-  description: string;
-  location: string;
-  date: string;
-  start_time: string;
-  end_time: string;
 }
 
 const HOUR_HEIGHT = 60;
@@ -80,27 +75,36 @@ function isAllDay(event: CalendarEvent) {
   return !event.start || event.start.length <= 10;
 }
 
-const emptyForm: EventForm = {
-  summary: "",
-  description: "",
-  location: "",
-  date: "",
-  start_time: "10:00",
-  end_time: "11:00",
-};
-
 const Agenda = () => {
   const { role } = useAuth();
+  const { addSale, products, closers, sdrs } = useSales();
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [selectedCollaborator, setSelectedCollaborator] = useState<string>("");
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 0 }));
 
-  // Dialog state
-  const [dialogOpen, setDialogOpen] = useState(false);
+  // Add scheduling dialog (same as Kanban)
+  const [addOpen, setAddOpen] = useState(false);
+  const [newDate, setNewDate] = useState<Date>(new Date());
+  const [newStartTime, setNewStartTime] = useState("10:00");
+  const [newEndTime, setNewEndTime] = useState("11:00");
+  const [newClient, setNewClient] = useState("");
+  const [newProduct, setNewProduct] = useState("");
+  const [newCloser, setNewCloser] = useState("");
+  const [newSdr, setNewSdr] = useState("");
+  const [newLeadSource, setNewLeadSource] = useState("");
+  const [newNotes, setNewNotes] = useState("");
+
+  // Edit event dialog
+  const [editOpen, setEditOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
-  const [form, setForm] = useState<EventForm>(emptyForm);
+  const [editSummary, setEditSummary] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editLocation, setEditLocation] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editStartTime, setEditStartTime] = useState("10:00");
+  const [editEndTime, setEditEndTime] = useState("11:00");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -158,71 +162,119 @@ const Agenda = () => {
     return format(parseISO(iso), "HH:mm");
   };
 
-  // Open dialog for new event
+  // Get selected collaborator name
+  const selectedCollaboratorName = collaborators.find((c) => c.id === selectedCollaborator)?.name || "";
+
+  // Open add dialog
   const handleNewEvent = (day?: Date) => {
-    setEditingEvent(null);
-    setForm({
-      ...emptyForm,
-      date: day ? format(day, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"),
-    });
-    setDialogOpen(true);
+    setNewDate(day || new Date());
+    setNewStartTime("10:00");
+    setNewEndTime("11:00");
+    setNewClient("");
+    setNewProduct("");
+    setNewCloser(selectedCollaboratorName);
+    setNewSdr("");
+    setNewLeadSource("");
+    setNewNotes("");
+    setAddOpen(true);
   };
 
-  // Open dialog to edit existing event
+  // Save new scheduling (same logic as Kanban)
+  const handleAddSave = async () => {
+    if (!newClient || !newProduct || !newCloser || !newSdr || !newLeadSource) {
+      toast.error("Preencha todos os campos obrigatórios.");
+      return;
+    }
+    const createdSale = await addSale({
+      date: newDate,
+      clientName: newClient.trim(),
+      product: newProduct,
+      grossValue: 0,
+      netValue: 0,
+      paymentMethod: "",
+      closer: newCloser,
+      sdr: newSdr,
+      status: "Pendente",
+      leadSource: newLeadSource,
+      notes: newNotes.trim(),
+    });
+
+    if (!createdSale) return;
+    toast.success("Agendamento criado!");
+
+    try {
+      const { data, error } = await supabase.functions.invoke("google-calendar-event", {
+        body: {
+          collaborator_name: newCloser,
+          client_name: newClient.trim(),
+          product: newProduct,
+          date: newDate.toISOString(),
+          start_time: newStartTime,
+          end_time: newEndTime,
+          notes: newNotes.trim(),
+        },
+      });
+      if (data?.success) {
+        toast.success("📅 Evento criado no Google Calendar!", { duration: 4000 });
+      } else if (data?.skipped) {
+        toast.warning(data?.error || "Google Calendar não vinculado para este closer", { duration: 5000 });
+      } else if (error || data?.error) {
+        toast.warning("Falha ao criar evento no Calendar: " + (data?.error || error?.message), { duration: 5000 });
+      }
+    } catch (err) {
+      console.warn("Calendar integration error:", err);
+    }
+
+    setAddOpen(false);
+    fetchEvents();
+  };
+
+  // Open edit dialog for existing event
   const handleEditEvent = (ev: CalendarEvent) => {
     setEditingEvent(ev);
+    setEditSummary(ev.summary);
+    setEditDescription(ev.description);
+    setEditLocation(ev.location);
     const startDate = parseISO(ev.start);
-    setForm({
-      summary: ev.summary,
-      description: ev.description,
-      location: ev.location,
-      date: format(startDate, "yyyy-MM-dd"),
-      start_time: ev.start.length > 10 ? format(startDate, "HH:mm") : "10:00",
-      end_time: ev.end.length > 10 ? format(parseISO(ev.end), "HH:mm") : "11:00",
-    });
-    setDialogOpen(true);
+    setEditDate(format(startDate, "yyyy-MM-dd"));
+    setEditStartTime(ev.start.length > 10 ? format(startDate, "HH:mm") : "10:00");
+    setEditEndTime(ev.end.length > 10 ? format(parseISO(ev.end), "HH:mm") : "11:00");
+    setEditOpen(true);
   };
 
-  // Save (create or update)
-  const handleSave = async () => {
-    if (!form.summary.trim()) {
-      toast.error("Título é obrigatório");
+  // Save edit
+  const handleEditSave = async () => {
+    if (!editSummary.trim() || !editDate) {
+      toast.error("Título e data são obrigatórios");
       return;
     }
-    if (!form.date) {
-      toast.error("Data é obrigatória");
-      return;
-    }
-
     setSaving(true);
-    const action = editingEvent ? "update" : "create";
     const { data, error } = await supabase.functions.invoke("google-calendar-manage", {
       body: {
-        action,
+        action: "update",
         collaborator_id: selectedCollaborator,
         event_id: editingEvent?.id,
         event_data: {
-          summary: form.summary,
-          description: form.description,
-          location: form.location,
-          date: form.date,
-          start_time: form.start_time,
-          end_time: form.end_time,
+          summary: editSummary,
+          description: editDescription,
+          location: editLocation,
+          date: editDate,
+          start_time: editStartTime,
+          end_time: editEndTime,
         },
       },
     });
     setSaving(false);
-
     if (data?.success) {
-      toast.success(editingEvent ? "Evento atualizado! ✅" : "Evento criado! ✅");
-      setDialogOpen(false);
+      toast.success("Evento atualizado! ✅");
+      setEditOpen(false);
       fetchEvents();
     } else {
       toast.error(data?.error || error?.message || "Erro ao salvar evento");
     }
   };
 
-  // Delete
+  // Delete event
   const handleDelete = async () => {
     if (!editingEvent) return;
     setDeleting(true);
@@ -234,10 +286,9 @@ const Agenda = () => {
       },
     });
     setDeleting(false);
-
     if (data?.success) {
       toast.success("Evento excluído! 🗑️");
-      setDialogOpen(false);
+      setEditOpen(false);
       fetchEvents();
     } else {
       toast.error(data?.error || error?.message || "Erro ao excluir evento");
@@ -274,9 +325,9 @@ const Agenda = () => {
           </Button>
         </div>
         <div className="flex items-center gap-3">
-          <Button size="sm" onClick={() => handleNewEvent()} className="gap-1.5">
-            <Plus className="h-4 w-4" />
-            Novo Evento
+          <Button size="sm" onClick={() => handleNewEvent()} className="font-semibold">
+            <Plus className="h-4 w-4 mr-1" />
+            Novo Agendamento
           </Button>
           <User className="h-4 w-4 text-muted-foreground" />
           <Select value={selectedCollaborator} onValueChange={setSelectedCollaborator}>
@@ -465,37 +516,117 @@ const Agenda = () => {
         </div>
       )}
 
-      {/* Event Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {/* Add Scheduling Dialog (same as Kanban) */}
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Novo Agendamento</DialogTitle>
+            <DialogDescription>Preencha os dados do agendamento. Será criado como "Pendente" e sincronizado com o Google Calendar.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground">Data</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                    <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                    {format(newDate, "dd MMM yyyy", { locale: ptBR })}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={newDate} onSelect={(d) => d && setNewDate(d)} className="p-3 pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground">Início *</Label>
+                <Input type="time" value={newStartTime} onChange={(e) => setNewStartTime(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground">Fim *</Label>
+                <Input type="time" value={newEndTime} onChange={(e) => setNewEndTime(e.target.value)} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground">Cliente *</Label>
+              <Input placeholder="Nome do cliente" value={newClient} onChange={(e) => setNewClient(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground">Produto *</Label>
+                <Select value={newProduct} onValueChange={setNewProduct}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>{products.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground">Origem *</Label>
+                <Select value={newLeadSource} onValueChange={setNewLeadSource}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>{LEAD_SOURCES.map((ls) => <SelectItem key={ls} value={ls}>{ls}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground">Closer *</Label>
+                <Select value={newCloser} onValueChange={setNewCloser}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>{closers.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground">SDR *</Label>
+                <Select value={newSdr} onValueChange={setNewSdr}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>{sdrs.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground">Observações</Label>
+              <Textarea placeholder="Briefing, anotações..." value={newNotes} onChange={(e) => setNewNotes(e.target.value)} rows={3} />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button onClick={handleAddSave} className="flex-1 font-semibold">
+                <Save className="h-4 w-4 mr-1" /> Criar Agendamento
+              </Button>
+              <Button variant="ghost" onClick={() => setAddOpen(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Event Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>{editingEvent ? "Editar Evento" : "Novo Evento"}</DialogTitle>
+            <DialogTitle>Editar Evento</DialogTitle>
             <DialogDescription>
-              {editingEvent
-                ? "Edite os dados do evento. As alterações serão sincronizadas com o Google Calendar."
-                : "Preencha os dados do evento. Ele será criado no Google Calendar do closer selecionado."}
+              Edite os dados do evento. As alterações serão sincronizadas com o Google Calendar.
             </DialogDescription>
           </DialogHeader>
-
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label htmlFor="ev-summary">Título *</Label>
               <Input
                 id="ev-summary"
                 placeholder="Título do evento"
-                value={form.summary}
-                onChange={(e) => setForm({ ...form, summary: e.target.value })}
+                value={editSummary}
+                onChange={(e) => setEditSummary(e.target.value)}
               />
             </div>
-
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="ev-date">Data *</Label>
                 <Input
                   id="ev-date"
                   type="date"
-                  value={form.date}
-                  onChange={(e) => setForm({ ...form, date: e.target.value })}
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -503,8 +634,8 @@ const Agenda = () => {
                 <Input
                   id="ev-start"
                   type="time"
-                  value={form.start_time}
-                  onChange={(e) => setForm({ ...form, start_time: e.target.value })}
+                  value={editStartTime}
+                  onChange={(e) => setEditStartTime(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -512,54 +643,49 @@ const Agenda = () => {
                 <Input
                   id="ev-end"
                   type="time"
-                  value={form.end_time}
-                  onChange={(e) => setForm({ ...form, end_time: e.target.value })}
+                  value={editEndTime}
+                  onChange={(e) => setEditEndTime(e.target.value)}
                 />
               </div>
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="ev-location">Local</Label>
               <Input
                 id="ev-location"
                 placeholder="Local (opcional)"
-                value={form.location}
-                onChange={(e) => setForm({ ...form, location: e.target.value })}
+                value={editLocation}
+                onChange={(e) => setEditLocation(e.target.value)}
               />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="ev-desc">Descrição</Label>
               <Textarea
                 id="ev-desc"
                 placeholder="Descrição (opcional)"
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
                 rows={3}
               />
             </div>
           </div>
-
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            {editingEvent && (
-              <Button
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={deleting || saving}
-                className="gap-1.5 sm:mr-auto"
-              >
-                {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                Excluir
-              </Button>
-            )}
-            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving || deleting}>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleting || saving}
+              className="gap-1.5 sm:mr-auto"
+            >
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              Excluir
+            </Button>
+            <Button variant="outline" onClick={() => setEditOpen(false)} disabled={saving || deleting}>
               Cancelar
             </Button>
-            <Button onClick={handleSave} disabled={saving || deleting} className="gap-1.5">
+            <Button onClick={handleEditSave} disabled={saving || deleting} className="gap-1.5">
               {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-              {editingEvent ? "Salvar alterações" : "Criar evento"}
+              Salvar alterações
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
