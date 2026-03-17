@@ -1,12 +1,17 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { CalendarDays, ChevronLeft, ChevronRight, Loader2, User } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Loader2, User, Plus, Pencil, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format, addDays, startOfWeek, endOfWeek, isSameDay, parseISO, isToday, differenceInMinutes } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { format, addDays, startOfWeek, endOfWeek, isSameDay, parseISO, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface CalendarEvent {
   id: string;
@@ -25,12 +30,20 @@ interface Collaborator {
   type: string;
 }
 
-const HOUR_HEIGHT = 60; // px per hour
+interface EventForm {
+  summary: string;
+  description: string;
+  location: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+}
+
+const HOUR_HEIGHT = 60;
 const START_HOUR = 7;
 const END_HOUR = 24;
 const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
 
-// Color palette for events
 const EVENT_COLORS = [
   { bg: "bg-sky-500/80", border: "border-sky-400", text: "text-white" },
   { bg: "bg-rose-500/70", border: "border-rose-400", text: "text-white" },
@@ -67,6 +80,15 @@ function isAllDay(event: CalendarEvent) {
   return !event.start || event.start.length <= 10;
 }
 
+const emptyForm: EventForm = {
+  summary: "",
+  description: "",
+  location: "",
+  date: "",
+  start_time: "10:00",
+  end_time: "11:00",
+};
+
 const Agenda = () => {
   const { role } = useAuth();
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
@@ -74,6 +96,13 @@ const Agenda = () => {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 0 }));
+
+  // Dialog state
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [form, setForm] = useState<EventForm>(emptyForm);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 0 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -93,22 +122,23 @@ const Agenda = () => {
     fetchCollaborators();
   }, []);
 
-  useEffect(() => {
+  const fetchEvents = useCallback(async () => {
     if (!selectedCollaborator) return;
-    const fetchEvents = async () => {
-      setLoading(true);
-      const { data } = await supabase.functions.invoke("google-calendar-events", {
-        body: {
-          collaborator_id: selectedCollaborator,
-          time_min: weekStart.toISOString(),
-          time_max: addDays(weekEnd, 1).toISOString(),
-        },
-      });
-      setEvents(data?.events || []);
-      setLoading(false);
-    };
-    fetchEvents();
+    setLoading(true);
+    const { data } = await supabase.functions.invoke("google-calendar-events", {
+      body: {
+        collaborator_id: selectedCollaborator,
+        time_min: weekStart.toISOString(),
+        time_max: addDays(weekEnd, 1).toISOString(),
+      },
+    });
+    setEvents(data?.events || []);
+    setLoading(false);
   }, [selectedCollaborator, weekStart]);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   const { timedEvents, allDayEvents } = useMemo(() => {
     const timed: CalendarEvent[] = [];
@@ -121,21 +151,102 @@ const Agenda = () => {
   }, [events]);
 
   const getEventsForDay = (day: Date, list: CalendarEvent[]) =>
-    list.filter((ev) => {
-      const evDate = parseISO(ev.start);
-      return isSameDay(evDate, day);
-    });
+    list.filter((ev) => isSameDay(parseISO(ev.start), day));
 
   const formatTime = (iso: string) => {
     if (!iso || iso.length <= 10) return "";
     return format(parseISO(iso), "HH:mm");
   };
 
-  // Current time indicator
+  // Open dialog for new event
+  const handleNewEvent = (day?: Date) => {
+    setEditingEvent(null);
+    setForm({
+      ...emptyForm,
+      date: day ? format(day, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"),
+    });
+    setDialogOpen(true);
+  };
+
+  // Open dialog to edit existing event
+  const handleEditEvent = (ev: CalendarEvent) => {
+    setEditingEvent(ev);
+    const startDate = parseISO(ev.start);
+    setForm({
+      summary: ev.summary,
+      description: ev.description,
+      location: ev.location,
+      date: format(startDate, "yyyy-MM-dd"),
+      start_time: ev.start.length > 10 ? format(startDate, "HH:mm") : "10:00",
+      end_time: ev.end.length > 10 ? format(parseISO(ev.end), "HH:mm") : "11:00",
+    });
+    setDialogOpen(true);
+  };
+
+  // Save (create or update)
+  const handleSave = async () => {
+    if (!form.summary.trim()) {
+      toast.error("Título é obrigatório");
+      return;
+    }
+    if (!form.date) {
+      toast.error("Data é obrigatória");
+      return;
+    }
+
+    setSaving(true);
+    const action = editingEvent ? "update" : "create";
+    const { data, error } = await supabase.functions.invoke("google-calendar-manage", {
+      body: {
+        action,
+        collaborator_id: selectedCollaborator,
+        event_id: editingEvent?.id,
+        event_data: {
+          summary: form.summary,
+          description: form.description,
+          location: form.location,
+          date: form.date,
+          start_time: form.start_time,
+          end_time: form.end_time,
+        },
+      },
+    });
+    setSaving(false);
+
+    if (data?.success) {
+      toast.success(editingEvent ? "Evento atualizado! ✅" : "Evento criado! ✅");
+      setDialogOpen(false);
+      fetchEvents();
+    } else {
+      toast.error(data?.error || error?.message || "Erro ao salvar evento");
+    }
+  };
+
+  // Delete
+  const handleDelete = async () => {
+    if (!editingEvent) return;
+    setDeleting(true);
+    const { data, error } = await supabase.functions.invoke("google-calendar-manage", {
+      body: {
+        action: "delete",
+        collaborator_id: selectedCollaborator,
+        event_id: editingEvent.id,
+      },
+    });
+    setDeleting(false);
+
+    if (data?.success) {
+      toast.success("Evento excluído! 🗑️");
+      setDialogOpen(false);
+      fetchEvents();
+    } else {
+      toast.error(data?.error || error?.message || "Erro ao excluir evento");
+    }
+  };
+
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
   const nowTop = ((nowMinutes - START_HOUR * 60) / 60) * HOUR_HEIGHT;
-  const todayIndex = weekDays.findIndex((d) => isToday(d));
 
   return (
     <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10 py-6 space-y-4">
@@ -163,6 +274,10 @@ const Agenda = () => {
           </Button>
         </div>
         <div className="flex items-center gap-3">
+          <Button size="sm" onClick={() => handleNewEvent()} className="gap-1.5">
+            <Plus className="h-4 w-4" />
+            Novo Evento
+          </Button>
           <User className="h-4 w-4 text-muted-foreground" />
           <Select value={selectedCollaborator} onValueChange={setSelectedCollaborator}>
             <SelectTrigger className="w-[200px]">
@@ -195,9 +310,8 @@ const Agenda = () => {
               return (
                 <div
                   key={day.toISOString()}
-                  className={cn(
-                    "text-center py-3 border-r border-border last:border-r-0",
-                  )}
+                  className="text-center py-3 border-r border-border last:border-r-0 cursor-pointer hover:bg-secondary/30 transition-colors"
+                  onClick={() => handleNewEvent(day)}
                 >
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
                     {format(day, "EEE", { locale: ptBR })}
@@ -205,9 +319,7 @@ const Agenda = () => {
                   <div
                     className={cn(
                       "w-9 h-9 mx-auto flex items-center justify-center rounded-full text-lg font-bold mt-0.5",
-                      today
-                        ? "bg-primary text-primary-foreground"
-                        : "text-foreground"
+                      today ? "bg-primary text-primary-foreground" : "text-foreground"
                     )}
                   >
                     {format(day, "d")}
@@ -230,18 +342,16 @@ const Agenda = () => {
                     {dayAllDay.map((ev) => {
                       const color = getEventColor(ev.summary);
                       return (
-                        <a
+                        <button
                           key={ev.id}
-                          href={ev.htmlLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          onClick={() => handleEditEvent(ev)}
                           className={cn(
-                            "block px-1.5 py-0.5 rounded text-[10px] font-medium truncate border-l-2",
+                            "block w-full text-left px-1.5 py-0.5 rounded text-[10px] font-medium truncate border-l-2 hover:brightness-110 transition-all",
                             color.bg, color.border, color.text
                           )}
                         >
                           {ev.summary}
-                        </a>
+                        </button>
                       );
                     })}
                   </div>
@@ -273,7 +383,7 @@ const Agenda = () => {
               </div>
 
               {/* Day columns */}
-              {weekDays.map((day, dayIndex) => {
+              {weekDays.map((day) => {
                 const dayEvents = getEventsForDay(day, timedEvents);
                 const today = isToday(day);
 
@@ -285,7 +395,6 @@ const Agenda = () => {
                       today && "bg-primary/[0.03]"
                     )}
                   >
-                    {/* Hour lines */}
                     {HOURS.map((hour) => (
                       <div
                         key={hour}
@@ -294,18 +403,15 @@ const Agenda = () => {
                       />
                     ))}
 
-                    {/* Events */}
                     {dayEvents.map((ev) => {
                       const pos = getEventPosition(ev);
                       const color = getEventColor(ev.summary);
                       return (
-                        <a
+                        <button
                           key={ev.id}
-                          href={ev.htmlLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          onClick={() => handleEditEvent(ev)}
                           className={cn(
-                            "absolute left-0.5 right-1 rounded-md border-l-[3px] px-1.5 py-1 overflow-hidden group hover:brightness-110 transition-all z-10",
+                            "absolute left-0.5 right-1 rounded-md border-l-[3px] px-1.5 py-1 overflow-hidden text-left group hover:brightness-110 hover:shadow-lg transition-all z-10 cursor-pointer",
                             color.bg, color.border, color.text
                           )}
                           style={{
@@ -313,6 +419,9 @@ const Agenda = () => {
                             height: `${Math.max(pos.height, 20)}px`,
                           }}
                         >
+                          <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Pencil className="h-3 w-3" />
+                          </div>
                           <p className="text-[11px] font-semibold leading-tight line-clamp-2">
                             {ev.summary}
                           </p>
@@ -326,14 +435,13 @@ const Agenda = () => {
                               {ev.location}
                             </p>
                           )}
-                        </a>
+                        </button>
                       );
                     })}
 
-                    {/* Current time line */}
                     {today && nowMinutes >= START_HOUR * 60 && nowMinutes <= END_HOUR * 60 && (
                       <div
-                        className="absolute left-0 right-0 z-20 flex items-center"
+                        className="absolute left-0 right-0 z-20 flex items-center pointer-events-none"
                         style={{ top: `${nowTop}px` }}
                       >
                         <div className="w-2.5 h-2.5 rounded-full bg-destructive -ml-1" />
@@ -356,6 +464,104 @@ const Agenda = () => {
           </p>
         </div>
       )}
+
+      {/* Event Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>{editingEvent ? "Editar Evento" : "Novo Evento"}</DialogTitle>
+            <DialogDescription>
+              {editingEvent
+                ? "Edite os dados do evento. As alterações serão sincronizadas com o Google Calendar."
+                : "Preencha os dados do evento. Ele será criado no Google Calendar do closer selecionado."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="ev-summary">Título *</Label>
+              <Input
+                id="ev-summary"
+                placeholder="Título do evento"
+                value={form.summary}
+                onChange={(e) => setForm({ ...form, summary: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="ev-date">Data *</Label>
+                <Input
+                  id="ev-date"
+                  type="date"
+                  value={form.date}
+                  onChange={(e) => setForm({ ...form, date: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ev-start">Início</Label>
+                <Input
+                  id="ev-start"
+                  type="time"
+                  value={form.start_time}
+                  onChange={(e) => setForm({ ...form, start_time: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ev-end">Fim</Label>
+                <Input
+                  id="ev-end"
+                  type="time"
+                  value={form.end_time}
+                  onChange={(e) => setForm({ ...form, end_time: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="ev-location">Local</Label>
+              <Input
+                id="ev-location"
+                placeholder="Local (opcional)"
+                value={form.location}
+                onChange={(e) => setForm({ ...form, location: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="ev-desc">Descrição</Label>
+              <Textarea
+                id="ev-desc"
+                placeholder="Descrição (opcional)"
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            {editingEvent && (
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={deleting || saving}
+                className="gap-1.5 sm:mr-auto"
+              >
+                {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                Excluir
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving || deleting}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSave} disabled={saving || deleting} className="gap-1.5">
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              {editingEvent ? "Salvar alterações" : "Criar evento"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
