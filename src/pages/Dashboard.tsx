@@ -18,7 +18,7 @@ import { PAYMENT_METHOD_MAP, LEAD_SOURCE_MAP } from "@/data/mockData";
 const formatValue = (v: number) =>
   `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const Dashboard = () => {
+const Dashboard = ({ onGoToKanban }: { onGoToKanban: () => void }) => {
   const { role } = useAuth();
   const [startDate, setStartDate] = useState<Date>(startOfMonth(new Date()));
   const [endDate, setEndDate] = useState<Date>(new Date());
