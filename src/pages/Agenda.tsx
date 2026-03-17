@@ -402,7 +402,7 @@ const Agenda = () => {
                 return (
                   <div key={day.toISOString()} className="border-r border-border last:border-r-0 p-1 space-y-0.5">
                     {dayAllDay.map((ev) => {
-                      const color = getEventColor(ev.summary);
+                      const color = getEventColor(ev);
                       return (
                         <button
                           key={ev.id}
