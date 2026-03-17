@@ -22,6 +22,7 @@ const Index = () => {
       {activeTab === "database" && <SalesDatabase />}
       {activeTab === "kanban" && <KanbanBoard />}
       {activeTab === "pre-sales" && <PreSales />}
+      {activeTab === "agenda" && <Agenda />}
       {activeTab === "collaborators" && role === "admin" && <Collaborators />}
       {activeTab === "profile" && <Profile />}
     </div>
