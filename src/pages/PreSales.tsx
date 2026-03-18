@@ -335,6 +335,16 @@ const PreSales = () => {
         </Card>
       )}
 
+      {!isSDR && role === "visualizador" && (
+        <Card>
+          <CardContent className="py-6">
+            <p className="text-muted-foreground text-sm">
+              Você está no modo visualização. Os dados abaixo são apenas leitura.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Monthly SDR Goals Card with daily pace */}
       {(() => {
         const month = filterStart.getMonth() + 1;
