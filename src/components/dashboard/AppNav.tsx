@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { BarChart3, PlusCircle, Database, Columns3, Users, LogOut, Menu, X, UserCircle, Headset, CalendarDays } from "lucide-react";
+import { useState, useEffect } from "react";
+import { BarChart3, PlusCircle, Database, Columns3, Users, LogOut, Menu, X, UserCircle, Headset, CalendarDays, BrainCircuit } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -13,12 +14,26 @@ interface AppNavProps {
 const AppNav = ({ activeTab, onTabChange }: AppNavProps) => {
   const { role, signOut, user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collaboratorType, setCollaboratorType] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("collaborators")
+      .select("type")
+      .eq("user_id", user.id)
+      .single()
+      .then(({ data }) => setCollaboratorType(data?.type || null));
+  }, [user]);
 
   const tabs = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
     { id: "kanban", label: "Fluxo de Status", icon: Columns3 },
     { id: "pre-sales", label: "Pré-vendas", icon: Headset },
     { id: "agenda", label: "Agenda", icon: CalendarDays },
+    ...(role === "admin" || collaboratorType === "sdr"
+      ? [{ id: "ai-analysis", label: "Análise IA", icon: BrainCircuit }]
+      : []),
     ...(role === "admin"
       ? [{ id: "collaborators", label: "Colaboradores", icon: Users }]
       : []),

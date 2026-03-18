@@ -246,6 +246,41 @@ export type Database = {
         }
         Relationships: []
       }
+      sdr_analyses: {
+        Row: {
+          analysis: string
+          classification: string
+          created_at: string
+          id: string
+          images_count: number
+          sdr_id: string
+        }
+        Insert: {
+          analysis: string
+          classification?: string
+          created_at?: string
+          id?: string
+          images_count?: number
+          sdr_id: string
+        }
+        Update: {
+          analysis?: string
+          classification?: string
+          created_at?: string
+          id?: string
+          images_count?: number
+          sdr_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sdr_analyses_sdr_id_fkey"
+            columns: ["sdr_id"]
+            isOneToOne: false
+            referencedRelation: "collaborators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sdr_daily_metrics: {
         Row: {
           calls_scheduled: number
