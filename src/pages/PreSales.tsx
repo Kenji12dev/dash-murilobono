@@ -726,7 +726,7 @@ const PreSales = () => {
                       <TableHead className="text-center">Conversas</TableHead>
                       <TableHead className="text-center">Respostas</TableHead>
                       <TableHead className="text-center">Calls</TableHead>
-                      <TableHead className="text-center">Ações</TableHead>
+                      {role !== "visualizador" && <TableHead className="text-center">Ações</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
