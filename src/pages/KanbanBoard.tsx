@@ -54,6 +54,8 @@ const statusColumns = [
 
 const KanbanBoard = () => {
   const { sales, addSale, updateSale, deleteSale, products, closers, sdrs } = useSales();
+  const { role } = useAuth();
+  const isViewer = role === "visualizador";
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverColId, setDragOverColId] = useState<string | null>(null);
   const [startDate, setStartDate] = useState(() => startOfDay(new Date()));
