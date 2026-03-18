@@ -632,29 +632,33 @@ const Agenda = () => {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>Editar Evento</DialogTitle>
+            <DialogTitle>{isViewer ? "Detalhes do Evento" : "Editar Evento"}</DialogTitle>
             <DialogDescription>
-              Edite os dados do evento. As alterações serão sincronizadas com o Google Calendar.
+              {isViewer
+                ? "Visualização dos dados do evento. Você não tem permissão para editar."
+                : "Edite os dados do evento. As alterações serão sincronizadas com o Google Calendar."}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="ev-summary">Título *</Label>
+              <Label htmlFor="ev-summary">Título {!isViewer && "*"}</Label>
               <Input
                 id="ev-summary"
                 placeholder="Título do evento"
                 value={editSummary}
                 onChange={(e) => setEditSummary(e.target.value)}
+                disabled={isViewer}
               />
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="ev-date">Data *</Label>
+                <Label htmlFor="ev-date">Data {!isViewer && "*"}</Label>
                 <Input
                   id="ev-date"
                   type="date"
                   value={editDate}
                   onChange={(e) => setEditDate(e.target.value)}
+                  disabled={isViewer}
                 />
               </div>
               <div className="space-y-2">
@@ -664,6 +668,7 @@ const Agenda = () => {
                   type="time"
                   value={editStartTime}
                   onChange={(e) => setEditStartTime(e.target.value)}
+                  disabled={isViewer}
                 />
               </div>
               <div className="space-y-2">
@@ -673,6 +678,7 @@ const Agenda = () => {
                   type="time"
                   value={editEndTime}
                   onChange={(e) => setEditEndTime(e.target.value)}
+                  disabled={isViewer}
                 />
               </div>
             </div>
@@ -683,6 +689,7 @@ const Agenda = () => {
                 placeholder="Local (opcional)"
                 value={editLocation}
                 onChange={(e) => setEditLocation(e.target.value)}
+                disabled={isViewer}
               />
             </div>
             <div className="space-y-2">
@@ -693,27 +700,37 @@ const Agenda = () => {
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
                 rows={3}
+                disabled={isViewer}
               />
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={deleting || saving}
-              className="gap-1.5 sm:mr-auto"
-            >
-              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-              Excluir
-            </Button>
-            <Button variant="outline" onClick={() => setEditOpen(false)} disabled={saving || deleting}>
-              Cancelar
-            </Button>
-            <Button onClick={handleEditSave} disabled={saving || deleting} className="gap-1.5">
-              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-              Salvar alterações
-            </Button>
-          </div>
+          {!isViewer && (
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={deleting || saving}
+                className="gap-1.5 sm:mr-auto"
+              >
+                {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                Excluir
+              </Button>
+              <Button variant="outline" onClick={() => setEditOpen(false)} disabled={saving || deleting}>
+                Cancelar
+              </Button>
+              <Button onClick={handleEditSave} disabled={saving || deleting} className="gap-1.5">
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                Salvar alterações
+              </Button>
+            </div>
+          )}
+          {isViewer && (
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={() => setEditOpen(false)}>
+                Fechar
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
