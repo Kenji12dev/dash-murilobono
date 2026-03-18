@@ -611,6 +611,7 @@ const Collaborators = () => {
                 <SelectContent>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="colaborador">Colaborador</SelectItem>
+                  <SelectItem value="visualizador">Visualizador</SelectItem>
                 </SelectContent>
               </Select>
             </div>
