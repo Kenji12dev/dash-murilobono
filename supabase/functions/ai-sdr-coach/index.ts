@@ -170,15 +170,22 @@ serve(async (req) => {
       const errText = await aiResponse.text();
       console.error("Claude API error:", aiResponse.status, errText);
 
+      if (errText.includes("credit balance is too low") || errText.includes("insufficient_quota")) {
+        return new Response(
+          JSON.stringify({ error: "credit_balance_low" }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       if (aiResponse.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Limite de requisições atingido. Tente novamente em alguns minutos." }),
+          JSON.stringify({ error: "rate_limit" }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
       return new Response(
-        JSON.stringify({ error: "Erro ao processar análise", details: errText }),
+        JSON.stringify({ error: "provider_error", details: errText }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

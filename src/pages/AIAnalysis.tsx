@@ -116,20 +116,33 @@ const AIAnalysis = () => {
       });
 
       if (error) {
-        // Try to extract detailed error from response body
-        let detail = "";
+        let errorCode = "";
+        let httpStatus = 0;
         try {
           const ctx = error?.context;
           if (ctx instanceof Response) {
+            httpStatus = ctx.status;
             const body = await ctx.json();
-            detail = body?.error || body?.details || "";
+            errorCode = body?.error || "";
           }
         } catch {}
-        throw new Error(detail || error.message || "Erro na Edge Function");
+
+        if (errorCode === "credit_balance_low" || httpStatus === 402) {
+          throw new Error("Saldo de créditos insuficiente. Contate o administrador.");
+        } else if (httpStatus === 401) {
+          throw new Error("Sessão expirada. Faça login novamente.");
+        } else if (httpStatus === 429 || errorCode === "rate_limit") {
+          throw new Error("Limite de requisições atingido. Tente novamente em alguns minutos.");
+        } else {
+          throw new Error("Erro ao processar análise. Tente novamente em instantes.");
+        }
       }
 
       if (data?.error) {
-        throw new Error(data.error);
+        if (data.error === "credit_balance_low") {
+          throw new Error("Saldo de créditos insuficiente. Contate o administrador.");
+        }
+        throw new Error("Erro ao processar análise. Tente novamente em instantes.");
       }
 
       const assistantMsg: AnalysisMessage = {
@@ -144,8 +157,7 @@ const AIAnalysis = () => {
       loadHistory();
     } catch (err: any) {
       console.error("Analysis error:", err);
-      const errorMsg = err?.message || err?.context?.body?.error || "Erro ao processar análise";
-      toast.error(errorMsg);
+      toast.error(err?.message || "Erro ao processar análise. Tente novamente em instantes.");
     } finally {
       setLoading(false);
       setInput("");
