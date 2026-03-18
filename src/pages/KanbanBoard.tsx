@@ -372,10 +372,12 @@ const KanbanBoard = () => {
               {filteredSales.length} venda{filteredSales.length !== 1 && "s"}
             </span>
           </div>
-          <Button onClick={() => setAddOpen(true)} size="sm" className="font-semibold">
-            <Plus className="h-4 w-4 mr-1" />
-            Novo Agendamento
-          </Button>
+          {!isViewer && (
+            <Button onClick={() => setAddOpen(true)} size="sm" className="font-semibold">
+              <Plus className="h-4 w-4 mr-1" />
+              Novo Agendamento
+            </Button>
+          )}
         </div>
 
         <DateFilter
