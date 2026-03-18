@@ -201,7 +201,7 @@ const SalesDatabase = () => {
                     <th className="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">SDR</th>
                     <th className="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Origem</th>
                     <th className="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
-                    <th className="px-5 py-3"></th>
+                    {!isViewer && <th className="px-5 py-3"></th>}
                   </tr>
                 </thead>
                 <tbody>
