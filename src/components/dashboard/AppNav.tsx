@@ -19,6 +19,9 @@ const AppNav = ({ activeTab, onTabChange }: AppNavProps) => {
     { id: "kanban", label: "Fluxo de Status", icon: Columns3 },
     { id: "pre-sales", label: "Pré-vendas", icon: Headset },
     { id: "agenda", label: "Agenda", icon: CalendarDays },
+    ...(role === "admin" || collaboratorType === "sdr"
+      ? [{ id: "ai-analysis", label: "Análise IA", icon: BrainCircuit }]
+      : []),
     ...(role === "admin"
       ? [{ id: "collaborators", label: "Colaboradores", icon: Users }]
       : []),
