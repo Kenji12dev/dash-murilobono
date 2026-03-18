@@ -313,6 +313,7 @@ const SalesDatabase = () => {
                           </span>
                         )}
                       </td>
+                      {!isViewer && (
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2">
                           {editingId === s.id ? (
@@ -357,6 +358,7 @@ const SalesDatabase = () => {
                           )}
                         </div>
                       </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
