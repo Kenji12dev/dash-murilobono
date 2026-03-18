@@ -87,6 +87,7 @@ function isAllDay(event: CalendarEvent) {
 
 const Agenda = () => {
   const { role } = useAuth();
+  const isViewer = role === "visualizador";
   const { addSale, products, closers, sdrs } = useSales();
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [selectedCollaborator, setSelectedCollaborator] = useState<string>("");
