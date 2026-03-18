@@ -15,6 +15,8 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const { role } = useAuth();
 
+  const isViewer = role === "visualizador";
+
   return (
     <div className="min-h-screen bg-background">
       <AppNav activeTab={activeTab} onTabChange={setActiveTab} />
@@ -24,7 +26,7 @@ const Index = () => {
       {activeTab === "agenda" && <Agenda />}
       {activeTab === "ai-analysis" && <AIAnalysis />}
       {activeTab === "collaborators" && role === "admin" && <Collaborators />}
-      {activeTab === "profile" && <Profile />}
+      {activeTab === "profile" && !isViewer && <Profile />}
     </div>
   );
 };

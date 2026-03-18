@@ -583,6 +583,7 @@ const Collaborators = () => {
                 <SelectContent>
                   <SelectItem value="closer">Closer</SelectItem>
                   <SelectItem value="sdr">SDR</SelectItem>
+                  <SelectItem value="visualizador">Visualizador</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -611,6 +612,7 @@ const Collaborators = () => {
                 <SelectContent>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="colaborador">Colaborador</SelectItem>
+                  <SelectItem value="visualizador">Visualizador</SelectItem>
                 </SelectContent>
               </Select>
             </div>
