@@ -337,10 +337,12 @@ const Agenda = () => {
           </Button>
         </div>
         <div className="flex items-center gap-3">
-          <Button size="sm" onClick={() => handleNewEvent()} className="font-semibold">
-            <Plus className="h-4 w-4 mr-1" />
-            Novo Agendamento
-          </Button>
+          {!isViewer && (
+            <Button size="sm" onClick={() => handleNewEvent()} className="font-semibold">
+              <Plus className="h-4 w-4 mr-1" />
+              Novo Agendamento
+            </Button>
+          )}
           <User className="h-4 w-4 text-muted-foreground" />
           <Select value={selectedCollaborator} onValueChange={setSelectedCollaborator}>
             <SelectTrigger className="w-[200px]">
