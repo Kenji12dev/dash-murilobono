@@ -53,6 +53,39 @@ const AIAnalysis = () => {
     loadChatMessages();
   }, []);
 
+  const loadChatMessages = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("sdr_chat_messages")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true });
+    if (data) {
+      setMessages(
+        data.map((m: any) => ({
+          id: m.id,
+          type: m.type as "user" | "assistant",
+          content: m.content,
+          images: m.images || [],
+          classification: m.classification || undefined,
+          timestamp: new Date(m.created_at),
+        }))
+      );
+    }
+  };
+
+  const saveChatMessage = async (msg: AnalysisMessage) => {
+    if (!user) return;
+    await supabase.from("sdr_chat_messages").insert({
+      id: msg.id,
+      user_id: user.id,
+      type: msg.type,
+      content: msg.content,
+      images: msg.images || [],
+      classification: msg.classification || null,
+    });
+  };
+
   const loadHistory = async () => {
     const { data } = await supabase
       .from("sdr_analyses")
