@@ -24,7 +24,10 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
+    console.log("Auth header present:", !!authHeader);
+
     if (!authHeader) {
+      console.error("Missing Authorization header");
       return new Response(JSON.stringify({ error: "Não autorizado" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -32,16 +35,22 @@ serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey, {
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
 
+    const token = authHeader.replace("Bearer ", "");
     const {
       data: { user },
       error: userError,
-    } = await supabase.auth.getUser();
+    } = await supabase.auth.getUser(token);
+
+    console.log("getUser result - user:", user?.id, "error:", userError?.message);
+
     if (userError || !user) {
+      console.error("Auth validation failed:", userError?.message || "No user returned");
       return new Response(JSON.stringify({ error: "Não autorizado" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -49,13 +58,16 @@ serve(async (req) => {
     }
 
     // Get collaborator info
-    const { data: collaborator } = await supabase
+    const { data: collaborator, error: collabError } = await supabase
       .from("collaborators")
       .select("id, name, type")
       .eq("user_id", user.id)
       .single();
 
+    console.log("Collaborator lookup - found:", !!collaborator, "error:", collabError?.message);
+
     if (!collaborator) {
+      console.error("Collaborator not found for user:", user.id);
       return new Response(
         JSON.stringify({ error: "Colaborador não encontrado" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -72,7 +84,10 @@ serve(async (req) => {
     const isAdmin = roleData?.role === "admin";
     const isSdr = collaborator.type === "sdr";
 
+    console.log("Access check - role:", roleData?.role, "type:", collaborator.type, "isAdmin:", isAdmin, "isSdr:", isSdr);
+
     if (!isAdmin && !isSdr) {
+      console.error("Access denied - not admin or sdr");
       return new Response(
         JSON.stringify({ error: "Acesso restrito a SDRs e admins" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -96,7 +111,10 @@ serve(async (req) => {
     }
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    console.log("ANTHROPIC_API_KEY present:", !!ANTHROPIC_API_KEY);
+
     if (!ANTHROPIC_API_KEY) {
+      console.error("ANTHROPIC_API_KEY not configured");
       return new Response(
         JSON.stringify({ error: "ANTHROPIC_API_KEY não configurada" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -124,6 +142,8 @@ serve(async (req) => {
     const contextMsg = `SDR: ${collaborator.name}\n${message ? `Contexto adicional do SDR: ${message}` : "Analise os prints acima."}`;
     userContent.push({ type: "text", text: contextMsg });
 
+    console.log("Calling Anthropic API with", images.length, "images");
+
     const aiResponse = await fetch(
       "https://api.anthropic.com/v1/messages",
       {
@@ -144,17 +164,21 @@ serve(async (req) => {
       }
     );
 
+    console.log("Anthropic API response status:", aiResponse.status);
+
     if (!aiResponse.ok) {
+      const errText = await aiResponse.text();
+      console.error("Claude API error:", aiResponse.status, errText);
+
       if (aiResponse.status === 429) {
         return new Response(
           JSON.stringify({ error: "Limite de requisições atingido. Tente novamente em alguns minutos." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      const errText = await aiResponse.text();
-      console.error("Claude API error:", aiResponse.status, errText);
+
       return new Response(
-        JSON.stringify({ error: "Erro ao processar análise" }),
+        JSON.stringify({ error: "Erro ao processar análise", details: errText }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -172,12 +196,18 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    await serviceClient.from("sdr_analyses").insert({
+    const { error: insertError } = await serviceClient.from("sdr_analyses").insert({
       sdr_id: collaborator.id,
       analysis,
       classification,
       images_count: images.length,
     });
+
+    if (insertError) {
+      console.error("DB insert error:", insertError.message);
+    }
+
+    console.log("Analysis complete - classification:", classification);
 
     return new Response(
       JSON.stringify({ analysis, classification }),
