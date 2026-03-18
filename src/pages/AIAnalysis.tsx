@@ -115,7 +115,22 @@ const AIAnalysis = () => {
         body: { images, message: input },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Try to extract detailed error from response body
+        let detail = "";
+        try {
+          const ctx = error?.context;
+          if (ctx instanceof Response) {
+            const body = await ctx.json();
+            detail = body?.error || body?.details || "";
+          }
+        } catch {}
+        throw new Error(detail || error.message || "Erro na Edge Function");
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       const assistantMsg: AnalysisMessage = {
         id: crypto.randomUUID(),
