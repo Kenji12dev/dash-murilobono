@@ -38,14 +38,22 @@ const statuses = ["Pago", "Pendente", "Follow Up", "Loss", "Reembolsado"];
 
 const SalesDatabase = () => {
   const { sales, deleteSale, updateSale, products, closers, sdrs } = useSales();
+  const { role } = useAuth();
+  const isViewer = role === "visualizador";
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sdrFilter, setSdrFilter] = useState("all");
+  const [closerFilter, setCloserFilter] = useState("all");
+  const [paymentFilter, setPaymentFilter] = useState("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<Sale>>({});
 
   // Reset page when filters change
   const handleSearch = (v: string) => { setSearch(v); setCurrentPage(1); };
   const handleStatusFilter = (v: string) => { setStatusFilter(v); setCurrentPage(1); };
+  const handleSdrFilter = (v: string) => { setSdrFilter(v); setCurrentPage(1); };
+  const handleCloserFilter = (v: string) => { setCloserFilter(v); setCurrentPage(1); };
+  const handlePaymentFilter = (v: string) => { setPaymentFilter(v); setCurrentPage(1); };
 
   const ITEMS_PER_PAGE = 20;
   const [currentPage, setCurrentPage] = useState(1);
@@ -54,12 +62,12 @@ const SalesDatabase = () => {
     .filter((s) => {
       const matchesSearch =
         !search ||
-        s.clientName.toLowerCase().includes(search.toLowerCase()) ||
-        s.product.toLowerCase().includes(search.toLowerCase()) ||
-        s.closer.toLowerCase().includes(search.toLowerCase()) ||
-        s.sdr.toLowerCase().includes(search.toLowerCase());
+        s.clientName.toLowerCase().includes(search.toLowerCase());
       const matchesStatus = statusFilter === "all" || s.status === statusFilter;
-      return matchesSearch && matchesStatus;
+      const matchesSdr = sdrFilter === "all" || s.sdr === sdrFilter;
+      const matchesCloser = closerFilter === "all" || s.closer === closerFilter;
+      const matchesPayment = paymentFilter === "all" || s.paymentMethod === paymentFilter;
+      return matchesSearch && matchesStatus && matchesSdr && matchesCloser && matchesPayment;
     })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
