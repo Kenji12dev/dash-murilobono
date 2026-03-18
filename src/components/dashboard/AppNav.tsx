@@ -26,6 +26,8 @@ const AppNav = ({ activeTab, onTabChange }: AppNavProps) => {
       .then(({ data }) => setCollaboratorType(data?.type || null));
   }, [user]);
 
+  const isViewer = role === "visualizador";
+
   const tabs = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
     { id: "kanban", label: "Fluxo de Status", icon: Columns3 },
@@ -37,7 +39,7 @@ const AppNav = ({ activeTab, onTabChange }: AppNavProps) => {
     ...(role === "admin"
       ? [{ id: "collaborators", label: "Colaboradores", icon: Users }]
       : []),
-    { id: "profile", label: "Perfil", icon: UserCircle },
+    ...(!isViewer ? [{ id: "profile", label: "Perfil", icon: UserCircle }] : []),
   ];
 
   const handleTabClick = (id: string) => {
