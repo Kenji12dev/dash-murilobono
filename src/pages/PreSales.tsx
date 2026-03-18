@@ -739,16 +739,18 @@ const PreSales = () => {
                         <TableCell className="text-center">{entry.conversations_started}</TableCell>
                         <TableCell className="text-center">{entry.first_replies}</TableCell>
                         <TableCell className="text-center">{entry.calls_scheduled}</TableCell>
-                        <TableCell className="text-center">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setSelectedDate(entry.date)}
-                            className="text-muted-foreground hover:text-primary"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                        </TableCell>
+                        {role !== "visualizador" && (
+                          <TableCell className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSelectedDate(entry.date)}
+                              className="text-muted-foreground hover:text-primary"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
