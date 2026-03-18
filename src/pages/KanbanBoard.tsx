@@ -693,8 +693,8 @@ const KanbanBoard = () => {
           {detailSale && (
             <>
               <DialogHeader>
-                <DialogTitle>Editar Agendamento</DialogTitle>
-                <DialogDescription>Altere as informações do agendamento.</DialogDescription>
+                <DialogTitle>{isViewer ? "Detalhes do Agendamento" : "Editar Agendamento"}</DialogTitle>
+                {!isViewer && <DialogDescription>Altere as informações do agendamento.</DialogDescription>}
               </DialogHeader>
               <div className="space-y-4 mt-2">
                 <div className="space-y-1.5">
