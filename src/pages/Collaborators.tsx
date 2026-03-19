@@ -27,7 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Users, Plus, Save, Loader2, Pencil, UserPlus, Trash2, CalendarDays, Check, ExternalLink, KeyRound } from "lucide-react";
+import { Users, Plus, Save, Loader2, Pencil, UserPlus, Trash2, CalendarDays, Check, ExternalLink, KeyRound, Eye } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,6 +49,12 @@ interface Collaborator {
   fixed_salary: number;
   user_id: string | null;
   has_calendar?: boolean;
+}
+
+interface ViewerUser {
+  user_id: string;
+  display_name: string;
+  email: string;
 }
 
 const formatPercent = (rate: number) => `${(rate * 100).toFixed(0)}%`;
@@ -92,6 +98,16 @@ const Collaborators = () => {
   const [calendarLinked, setCalendarLinked] = useState<Set<string>>(new Set());
   const [calendarLinking, setCalendarLinking] = useState<string | null>(null);
 
+  // Viewers
+  const [viewers, setViewers] = useState<ViewerUser[]>([]);
+  const [addViewerOpen, setAddViewerOpen] = useState(false);
+  const [newViewerName, setNewViewerName] = useState("");
+  const [newViewerEmail, setNewViewerEmail] = useState("");
+  const [newViewerPassword, setNewViewerPassword] = useState("");
+  const [addViewerLoading, setAddViewerLoading] = useState(false);
+  const [deleteViewer, setDeleteViewer] = useState<ViewerUser | null>(null);
+  const [deleteViewerLoading, setDeleteViewerLoading] = useState(false);
+
   const fetchCollaborators = async () => {
     const { data, error } = await supabase
       .from("collaborators")
@@ -113,15 +129,34 @@ const Collaborators = () => {
     setLoading(false);
   };
 
+  const fetchViewers = async () => {
+    // Get all user_ids with visualizador role
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "visualizador");
+    if (!roleData || roleData.length === 0) {
+      setViewers([]);
+      return;
+    }
+    const viewerIds = roleData.map((r) => r.user_id);
+    // Get profiles for these users
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("user_id, display_name, email")
+      .in("user_id", viewerIds);
+    if (profileData) {
+      setViewers(profileData.map((p) => ({ user_id: p.user_id, display_name: p.display_name, email: p.email || "" })));
+    }
+  };
+
   // Handle OAuth callback from Google
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
     const state = params.get("state"); // collaborator_id
     if (code && state) {
-      // Clear URL params
       window.history.replaceState({}, "", window.location.pathname);
-      // Exchange code for tokens
       (async () => {
         setCalendarLinking(state);
         const { data, error } = await supabase.functions.invoke("google-calendar-auth", {
@@ -145,6 +180,7 @@ const Collaborators = () => {
 
   useEffect(() => {
     fetchCollaborators();
+    fetchViewers();
   }, []);
 
   const handleEditSave = async () => {
@@ -206,7 +242,7 @@ const Collaborators = () => {
         type: newCollabType,
         commission_rate: rate,
         fixed_salary: parseFloat(newCollabFixedSalary) || 0,
-        user_id: userData?.user?.id || null,
+        user_id: userData?.userId || null,
       });
     setAddCollabLoading(false);
     if (collabError) {
@@ -242,6 +278,48 @@ const Collaborators = () => {
     }
   };
 
+  const handleAddViewer = async () => {
+    if (!newViewerName || !newViewerEmail || !newViewerPassword) {
+      toast.error("Preencha todos os campos.");
+      return;
+    }
+    if (newViewerPassword.length < 6) {
+      toast.error("A senha deve ter no mínimo 6 caracteres.");
+      return;
+    }
+    setAddViewerLoading(true);
+    const { data, error } = await supabase.functions.invoke("create-user", {
+      body: { email: newViewerEmail, password: newViewerPassword, displayName: newViewerName.trim(), role: "visualizador" },
+    });
+    setAddViewerLoading(false);
+    if (error || data?.error) {
+      toast.error(data?.error || error?.message || "Erro ao criar visualizador");
+    } else {
+      toast.success("Visualizador criado com sucesso!");
+      setAddViewerOpen(false);
+      setNewViewerName("");
+      setNewViewerEmail("");
+      setNewViewerPassword("");
+      fetchViewers();
+    }
+  };
+
+  const handleDeleteViewer = async () => {
+    if (!deleteViewer) return;
+    setDeleteViewerLoading(true);
+    const { data, error } = await supabase.functions.invoke("delete-user", {
+      body: { user_id: deleteViewer.user_id },
+    });
+    setDeleteViewerLoading(false);
+    if (error || data?.error) {
+      toast.error(data?.error || error?.message || "Erro ao excluir visualizador");
+    } else {
+      toast.success("Visualizador excluído!");
+      setDeleteViewer(null);
+      fetchViewers();
+    }
+  };
+
   const handleLinkCalendar = async (collaboratorId: string) => {
     setCalendarLinking(collaboratorId);
     const { data, error } = await supabase.functions.invoke("google-calendar-auth", {
@@ -258,6 +336,7 @@ const Collaborators = () => {
       toast.error("Erro ao gerar link de autorização: " + (data?.error || error?.message));
     }
   };
+
   const fetchUsers = async () => {
     const { data } = await supabase.from("profiles").select("user_id, email, display_name");
     if (data) {
@@ -288,7 +367,6 @@ const Collaborators = () => {
       setPasswordNewValue("");
     }
   };
-
 
   // Performance metrics per collaborator
   const getPerformance = (name: string, type: string) => {
@@ -321,6 +399,10 @@ const Collaborators = () => {
             <Button onClick={() => setAddCollabOpen(true)} size="sm" variant="outline" className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-1" />
               Novo Colaborador
+            </Button>
+            <Button onClick={() => setAddViewerOpen(true)} size="sm" variant="outline" className="w-full sm:w-auto">
+              <Eye className="h-4 w-4 mr-1" />
+              Novo Visualizador
             </Button>
             <Button onClick={() => { setPasswordOpen(true); fetchUsers(); }} size="sm" variant="outline" className="w-full sm:w-auto">
               <KeyRound className="h-4 w-4 mr-1" />
@@ -526,6 +608,69 @@ const Collaborators = () => {
             </Table>
           </div>
         </div>
+
+        {/* Visualizadores */}
+        <div className="glass-card gradient-border p-4 sm:p-6">
+          <h2 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+            <Eye className="h-4 w-4" />
+            Visualizadores
+          </h2>
+          {viewers.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">Nenhum visualizador cadastrado.</p>
+          ) : (
+            <>
+              {/* Mobile */}
+              <div className="flex flex-col gap-3 md:hidden">
+                {viewers.map((v) => (
+                  <div key={v.user_id} className="rounded-lg border border-border bg-card p-4 flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-sm text-foreground">{v.display_name}</p>
+                      <p className="text-xs text-muted-foreground">{v.email}</p>
+                    </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setDeleteViewer(v)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              {/* Desktop */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead className="w-[80px]">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {viewers.map((v) => (
+                      <TableRow key={v.user_id}>
+                        <TableCell className="font-medium">{v.display_name}</TableCell>
+                        <TableCell>{v.email}</TableCell>
+                        <TableCell>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => setDeleteViewer(v)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Edit collaborator dialog */}
@@ -583,7 +728,6 @@ const Collaborators = () => {
                 <SelectContent>
                   <SelectItem value="closer">Closer</SelectItem>
                   <SelectItem value="sdr">SDR</SelectItem>
-                  <SelectItem value="visualizador">Visualizador</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -612,7 +756,6 @@ const Collaborators = () => {
                 <SelectContent>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="colaborador">Colaborador</SelectItem>
-                  <SelectItem value="visualizador">Visualizador</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -623,9 +766,34 @@ const Collaborators = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Add viewer dialog */}
+      <Dialog open={addViewerOpen} onOpenChange={setAddViewerOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Novo Visualizador</DialogTitle>
+            <DialogDescription>Cria um usuário com acesso somente leitura.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground">Nome</Label>
+              <Input value={newViewerName} onChange={(e) => setNewViewerName(e.target.value)} placeholder="Nome completo" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground">Email</Label>
+              <Input type="email" value={newViewerEmail} onChange={(e) => setNewViewerEmail(e.target.value)} placeholder="email@exemplo.com" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground">Senha</Label>
+              <Input type="password" value={newViewerPassword} onChange={(e) => setNewViewerPassword(e.target.value)} placeholder="Mínimo 6 caracteres" />
+            </div>
+            <Button onClick={handleAddViewer} disabled={addViewerLoading} className="w-full">
+              {addViewerLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><UserPlus className="h-4 w-4 mr-1" /> Criar Visualizador</>}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-
-      {/* Delete confirmation dialog */}
+      {/* Delete collaborator confirmation */}
       <AlertDialog open={!!deleteCollab} onOpenChange={(open) => !open && setDeleteCollab(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -642,6 +810,28 @@ const Collaborators = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete viewer confirmation */}
+      <AlertDialog open={!!deleteViewer} onOpenChange={(open) => !open && setDeleteViewer(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir visualizador</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir <strong>{deleteViewer?.display_name}</strong>? O acesso será removido permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteViewer}
+              disabled={deleteViewerLoading}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteViewerLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Excluir"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
