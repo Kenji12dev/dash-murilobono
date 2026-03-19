@@ -68,6 +68,7 @@ const Leads = () => {
 
   const [newDialogOpen, setNewDialogOpen] = useState(false);
   const [newLead, setNewLead] = useState(emptyLead);
+  const [newLeadSdrId, setNewLeadSdrId] = useState<string>("");
 
   const [editLead, setEditLead] = useState<Lead | null>(null);
   const [editSheetOpen, setEditSheetOpen] = useState(false);
@@ -128,7 +129,7 @@ const Leads = () => {
   };
 
   const handleCreate = async () => {
-    const sdrId = isAdmin && filterSdr !== "all" ? filterSdr : myCollaboratorId;
+    const sdrId = isAdmin ? (newLeadSdrId || myCollaboratorId) : myCollaboratorId;
     if (!sdrId) { toast.error("Você precisa estar vinculado a um colaborador."); return; }
     if (!newLead.nome.trim()) { toast.error("Nome do lead é obrigatório."); return; }
     const { error } = await supabase.from("sdr_leads").insert({
@@ -208,7 +209,7 @@ const Leads = () => {
               {isAdmin && (
                 <div>
                   <Label>SDR responsável</Label>
-                  <Select value={filterSdr !== "all" ? filterSdr : myCollaboratorId || ""} onValueChange={(v) => setFilterSdr(v)}>
+                  <Select value={newLeadSdrId || myCollaboratorId || ""} onValueChange={(v) => setNewLeadSdrId(v)}>
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>{collaborators.filter((c) => c.id).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                   </Select>
