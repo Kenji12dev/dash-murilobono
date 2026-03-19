@@ -91,14 +91,17 @@ const Leads = () => {
       .then(({ data }) => setMyCollaboratorId(data?.id || null));
   }, [user]);
 
-  const fetchLeads = async () => {
+  const fetchLeads = useCallback(async () => {
+    setLoading(true);
     const { data, error } = await supabase
       .from("sdr_leads")
       .select("*")
+      .gte("created_at", startDate.toISOString())
+      .lte("created_at", endDate.toISOString())
       .order("created_at", { ascending: false });
     if (!error && data) setLeads(data as unknown as Lead[]);
     setLoading(false);
-  };
+  }, [startDate, endDate]);
 
   useEffect(() => {
     fetchLeads();
