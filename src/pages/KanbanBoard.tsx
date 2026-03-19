@@ -112,7 +112,12 @@ const KanbanBoard = () => {
 
   const filteredSales = sales.filter((s) => {
     const d = new Date(s.date);
-    return d >= startDate && d <= endDate;
+    const matchesDate = d >= startDate && d <= endDate;
+    const matchesSearch = !search || s.clientName.toLowerCase().includes(search.toLowerCase());
+    const matchesSdr = sdrFilter === "all" || s.sdr === sdrFilter;
+    const matchesCloser = closerFilter === "all" || s.closer === closerFilter;
+    const matchesPayment = paymentFilter === "all" || s.paymentMethod === paymentFilter;
+    return matchesDate && matchesSearch && matchesSdr && matchesCloser && matchesPayment;
   });
 
   // Drag handlers
