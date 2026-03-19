@@ -12,7 +12,7 @@ interface AppNavProps {
   overdueLeadsCount?: number;
 }
 
-const AppNav = ({ activeTab, onTabChange }: AppNavProps) => {
+const AppNav = ({ activeTab, onTabChange, overdueLeadsCount = 0 }: AppNavProps) => {
   const { role, signOut, user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collaboratorType, setCollaboratorType] = useState<string | null>(null);
