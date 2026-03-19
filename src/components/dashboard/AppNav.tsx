@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BarChart3, PlusCircle, Database, Columns3, Users, LogOut, Menu, X, UserCircle, Headset, CalendarDays, BrainCircuit } from "lucide-react";
+import { BarChart3, PlusCircle, Database, Columns3, Users, LogOut, Menu, X, UserCircle, Headset, CalendarDays, BrainCircuit, Contact } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,9 +9,10 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 interface AppNavProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  overdueLeadsCount?: number;
 }
 
-const AppNav = ({ activeTab, onTabChange }: AppNavProps) => {
+const AppNav = ({ activeTab, onTabChange, overdueLeadsCount = 0 }: AppNavProps) => {
   const { role, signOut, user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collaboratorType, setCollaboratorType] = useState<string | null>(null);
@@ -33,6 +34,7 @@ const AppNav = ({ activeTab, onTabChange }: AppNavProps) => {
     { id: "kanban", label: "Fluxo de Status", icon: Columns3 },
     { id: "database", label: "Banco de Dados", icon: Database },
     { id: "pre-sales", label: "Pré-vendas", icon: Headset },
+    { id: "leads", label: "Leads", icon: Contact, badge: overdueLeadsCount },
     { id: "agenda", label: "Agenda", icon: CalendarDays },
     ...(role === "admin" || collaboratorType === "sdr"
       ? [{ id: "ai-analysis", label: "Análise IA", icon: BrainCircuit }]
@@ -64,12 +66,12 @@ const AppNav = ({ activeTab, onTabChange }: AppNavProps) => {
 
         {/* Desktop nav */}
         <nav className="hidden lg:flex items-center gap-1">
-          {tabs.map(({ id, label, icon: Icon }) => (
+          {tabs.map(({ id, label, icon: Icon, badge }) => (
             <button
               key={id}
               onClick={() => onTabChange(id)}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                "relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                 activeTab === id
                   ? "bg-primary/15 text-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary"
@@ -77,6 +79,11 @@ const AppNav = ({ activeTab, onTabChange }: AppNavProps) => {
             >
               <Icon className="h-4 w-4" />
               {label}
+              {badge != null && badge > 0 && (
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full h-4 min-w-[16px] flex items-center justify-center px-1">
+                  {badge}
+                </span>
+              )}
             </button>
           ))}
           <div className="ml-3 pl-3 border-l border-border flex items-center gap-2">
@@ -115,12 +122,12 @@ const AppNav = ({ activeTab, onTabChange }: AppNavProps) => {
                 </div>
 
                 <nav className="flex-1 p-3 space-y-1">
-                  {tabs.map(({ id, label, icon: Icon }) => (
+                  {tabs.map(({ id, label, icon: Icon, badge }) => (
                     <button
                       key={id}
                       onClick={() => handleTabClick(id)}
                       className={cn(
-                        "flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
+                        "relative flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
                         activeTab === id
                           ? "bg-primary/15 text-primary"
                           : "text-muted-foreground hover:text-foreground hover:bg-secondary"
@@ -128,6 +135,11 @@ const AppNav = ({ activeTab, onTabChange }: AppNavProps) => {
                     >
                       <Icon className="h-4 w-4" />
                       {label}
+                      {badge != null && badge > 0 && (
+                        <span className="ml-auto bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full h-4 min-w-[16px] flex items-center justify-center px-1">
+                          {badge}
+                        </span>
+                      )}
                     </button>
                   ))}
                 </nav>
