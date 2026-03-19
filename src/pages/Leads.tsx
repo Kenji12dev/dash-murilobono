@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import { startOfMonth, endOfDay } from "date-fns";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { PlusCircle, AlertTriangle, GripVertical } from "lucide-react";
 import { format } from "date-fns";
-import DateFilter from "@/components/dashboard/DateFilter";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -67,8 +65,6 @@ const Leads = () => {
 
   const [filterClass, setFilterClass] = useState<string>("all");
   const [filterSdr, setFilterSdr] = useState<string>("all");
-  const [startDate, setStartDate] = useState<Date>(startOfMonth(new Date()));
-  const [endDate, setEndDate] = useState<Date>(endOfDay(new Date()));
 
   const [newDialogOpen, setNewDialogOpen] = useState(false);
   const [newLead, setNewLead] = useState(emptyLead);
@@ -119,12 +115,8 @@ const Leads = () => {
     let result = leads;
     if (filterClass !== "all") result = result.filter((l) => l.classificacao === filterClass);
     if (isAdmin && filterSdr !== "all") result = result.filter((l) => l.sdr_id === filterSdr);
-    result = result.filter((l) => {
-      const d = new Date(l.created_at);
-      return d >= startDate && d <= endDate;
-    });
     return result;
-  }, [leads, filterClass, filterSdr, isAdmin, startDate, endDate]);
+  }, [leads, filterClass, filterSdr, isAdmin]);
 
   const getColumnLeads = (status: LeadStatus) => {
     const col = filteredLeads.filter((l) => l.status === status);
@@ -246,9 +238,6 @@ const Leads = () => {
             </SelectContent>
           </Select>
         )}
-        <div className="flex-1">
-          <DateFilter startDate={startDate} endDate={endDate} onStartDateChange={setStartDate} onEndDateChange={setEndDate} />
-        </div>
       </div>
 
       {loading ? (
