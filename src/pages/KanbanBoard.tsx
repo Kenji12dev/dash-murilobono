@@ -61,6 +61,12 @@ const KanbanBoard = () => {
   const [startDate, setStartDate] = useState(() => startOfDay(new Date()));
   const [endDate, setEndDate] = useState(() => endOfDay(endOfMonth(new Date())));
 
+  // Filters
+  const [search, setSearch] = useState("");
+  const [sdrFilter, setSdrFilter] = useState("all");
+  const [closerFilter, setCloserFilter] = useState("all");
+  const [paymentFilter, setPaymentFilter] = useState("all");
+
   // Add dialog
   const [addOpen, setAddOpen] = useState(false);
   const [newDate, setNewDate] = useState<Date>(new Date());
