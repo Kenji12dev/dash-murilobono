@@ -4,7 +4,7 @@ import { ptBR } from "date-fns/locale";
 import { useSales, Sale } from "@/context/SalesContext";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Columns3, GripVertical, Plus, CalendarIcon, Save, X, ArrowRight, Trash2 } from "lucide-react";
+import { Columns3, GripVertical, Plus, CalendarIcon, Save, X, ArrowRight, Trash2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import DateFilter from "@/components/dashboard/DateFilter";
@@ -61,6 +61,12 @@ const KanbanBoard = () => {
   const [startDate, setStartDate] = useState(() => startOfDay(new Date()));
   const [endDate, setEndDate] = useState(() => endOfDay(endOfMonth(new Date())));
 
+  // Filters
+  const [search, setSearch] = useState("");
+  const [sdrFilter, setSdrFilter] = useState("all");
+  const [closerFilter, setCloserFilter] = useState("all");
+  const [paymentFilter, setPaymentFilter] = useState("all");
+
   // Add dialog
   const [addOpen, setAddOpen] = useState(false);
   const [newDate, setNewDate] = useState<Date>(new Date());
@@ -106,7 +112,12 @@ const KanbanBoard = () => {
 
   const filteredSales = sales.filter((s) => {
     const d = new Date(s.date);
-    return d >= startDate && d <= endDate;
+    const matchesDate = d >= startDate && d <= endDate;
+    const matchesSearch = !search || s.clientName.toLowerCase().includes(search.toLowerCase());
+    const matchesSdr = sdrFilter === "all" || s.sdr === sdrFilter;
+    const matchesCloser = closerFilter === "all" || s.closer === closerFilter;
+    const matchesPayment = paymentFilter === "all" || s.paymentMethod === paymentFilter;
+    return matchesDate && matchesSearch && matchesSdr && matchesCloser && matchesPayment;
   });
 
   // Drag handlers
@@ -386,6 +397,51 @@ const KanbanBoard = () => {
           onStartDateChange={setStartDate}
           onEndDateChange={setEndDate}
         />
+
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por lead..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-9"
+            />
+          </div>
+          <Select value={sdrFilter} onValueChange={setSdrFilter}>
+            <SelectTrigger className="w-[150px] h-9">
+              <SelectValue placeholder="SDR" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos SDRs</SelectItem>
+              {sdrs.map((s) => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={closerFilter} onValueChange={setCloserFilter}>
+            <SelectTrigger className="w-[150px] h-9">
+              <SelectValue placeholder="Closer" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos Closers</SelectItem>
+              {closers.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+            <SelectTrigger className="w-[170px] h-9">
+              <SelectValue placeholder="Pagamento" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos Pagamentos</SelectItem>
+              {PAYMENT_METHODS.map((p) => (
+                <SelectItem key={p} value={p}>{p}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
           {statusColumns.map((col) => {
