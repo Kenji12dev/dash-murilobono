@@ -143,6 +143,9 @@ const AIAnalysis = () => {
 
     setMessages((prev) => [...prev, userMsg]);
     saveChatMessage(userMsg);
+    setInput("");
+    setImages([]);
+    setPreviews([]);
     setLoading(true);
 
     try {
@@ -196,9 +199,6 @@ const AIAnalysis = () => {
       toast.error(err?.message || "Erro ao processar análise. Tente novamente em instantes.");
     } finally {
       setLoading(false);
-      setInput("");
-      setImages([]);
-      setPreviews([]);
     }
   };
 
