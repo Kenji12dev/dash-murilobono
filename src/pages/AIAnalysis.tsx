@@ -143,6 +143,9 @@ const AIAnalysis = () => {
 
     setMessages((prev) => [...prev, userMsg]);
     saveChatMessage(userMsg);
+    setInput("");
+    setImages([]);
+    setPreviews([]);
     setLoading(true);
 
     try {
