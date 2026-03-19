@@ -124,7 +124,7 @@ const Leads = () => {
       return d >= startDate && d <= endDate;
     });
     return result;
-  }, [leads, filterClass, filterSdr, isAdmin]);
+  }, [leads, filterClass, filterSdr, isAdmin, startDate, endDate]);
 
   const getColumnLeads = (status: LeadStatus) => {
     const col = filteredLeads.filter((l) => l.status === status);
