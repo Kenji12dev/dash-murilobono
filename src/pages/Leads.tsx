@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { startOfMonth, endOfDay } from "date-fns";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import DateFilter from "@/components/dashboard/DateFilter";
 
 const STATUSES = ["Abordado", "1º Mensagem", "Agendado", "Descartado"] as const;
 const CLASSIFICATIONS = ["Quente", "Morno", "Frio"] as const;
@@ -65,6 +67,8 @@ const Leads = () => {
 
   const [filterClass, setFilterClass] = useState<string>("all");
   const [filterSdr, setFilterSdr] = useState<string>("all");
+  const [startDate, setStartDate] = useState<Date>(startOfMonth(new Date()));
+  const [endDate, setEndDate] = useState<Date>(endOfDay(new Date()));
 
   const [newDialogOpen, setNewDialogOpen] = useState(false);
   const [newLead, setNewLead] = useState(emptyLead);
@@ -87,14 +91,17 @@ const Leads = () => {
       .then(({ data }) => setMyCollaboratorId(data?.id || null));
   }, [user]);
 
-  const fetchLeads = async () => {
+  const fetchLeads = useCallback(async () => {
+    setLoading(true);
     const { data, error } = await supabase
       .from("sdr_leads")
       .select("*")
+      .gte("created_at", startDate.toISOString())
+      .lte("created_at", endDate.toISOString())
       .order("created_at", { ascending: false });
     if (!error && data) setLeads(data as unknown as Lead[]);
     setLoading(false);
-  };
+  }, [startDate, endDate]);
 
   useEffect(() => {
     fetchLeads();
@@ -103,7 +110,7 @@ const Leads = () => {
       .on("postgres_changes", { event: "*", schema: "public", table: "sdr_leads" }, () => fetchLeads())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [fetchLeads]);
 
   const isOverdue = (lead: Lead) => {
     if (!lead.follow_up_date) return false;
@@ -238,6 +245,9 @@ const Leads = () => {
             </SelectContent>
           </Select>
         )}
+        <div className="flex-1">
+          <DateFilter startDate={startDate} endDate={endDate} onStartDateChange={setStartDate} onEndDateChange={setEndDate} />
+        </div>
       </div>
 
       {loading ? (
