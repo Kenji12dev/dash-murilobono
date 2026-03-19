@@ -110,7 +110,7 @@ const Leads = () => {
       .on("postgres_changes", { event: "*", schema: "public", table: "sdr_leads" }, () => fetchLeads())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [fetchLeads]);
 
   const isOverdue = (lead: Lead) => {
     if (!lead.follow_up_date) return false;
