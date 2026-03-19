@@ -238,9 +238,6 @@ const Leads = () => {
             </SelectContent>
           </Select>
         )}
-        <div className="flex-1">
-          <DateFilter startDate={startDate} endDate={endDate} onStartDateChange={setStartDate} onEndDateChange={setEndDate} />
-        </div>
       </div>
 
       {loading ? (
