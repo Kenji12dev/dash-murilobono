@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { format, startOfDay, endOfDay, endOfMonth } from "date-fns";
+import { format, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useSales, Sale } from "@/context/SalesContext";
 import { useAuth } from "@/context/AuthContext";
