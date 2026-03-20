@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { format, startOfDay, endOfDay, endOfMonth } from "date-fns";
+import { format, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useSales, Sale } from "@/context/SalesContext";
 import { useAuth } from "@/context/AuthContext";
@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Columns3, GripVertical, Plus, CalendarIcon, Save, X, ArrowRight, Trash2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import DateFilter from "@/components/dashboard/DateFilter";
+
 import { PAYMENT_METHODS, LEAD_SOURCES, calculateNetValue, getFeeDescription, HybridPayment, calculateHybridNetValue, calculateHybridCaixa } from "@/data/mockData";
 import {
   Dialog,
@@ -58,8 +58,6 @@ const KanbanBoard = () => {
   const isViewer = role === "visualizador";
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverColId, setDragOverColId] = useState<string | null>(null);
-  const [startDate, setStartDate] = useState(() => startOfDay(new Date()));
-  const [endDate, setEndDate] = useState(() => endOfDay(endOfMonth(new Date())));
 
   // Filters
   const [search, setSearch] = useState("");
@@ -111,13 +109,11 @@ const KanbanBoard = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const filteredSales = sales.filter((s) => {
-    const d = new Date(s.date);
-    const matchesDate = d >= startDate && d <= endDate;
     const matchesSearch = !search || s.clientName.toLowerCase().includes(search.toLowerCase());
     const matchesSdr = sdrFilter === "all" || s.sdr === sdrFilter;
     const matchesCloser = closerFilter === "all" || s.closer === closerFilter;
     const matchesPayment = paymentFilter === "all" || s.paymentMethod === paymentFilter;
-    return matchesDate && matchesSearch && matchesSdr && matchesCloser && matchesPayment;
+    return matchesSearch && matchesSdr && matchesCloser && matchesPayment;
   });
 
   // Drag handlers
@@ -391,12 +387,6 @@ const KanbanBoard = () => {
           )}
         </div>
 
-        <DateFilter
-          startDate={startDate}
-          endDate={endDate}
-          onStartDateChange={setStartDate}
-          onEndDateChange={setEndDate}
-        />
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[200px] max-w-sm">
