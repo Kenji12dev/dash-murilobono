@@ -47,6 +47,8 @@ const SalesDatabase = () => {
   const [sdrFilter, setSdrFilter] = useState("all");
   const [closerFilter, setCloserFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
+  const [startDate, setStartDate] = useState<Date>(startOfMonth(new Date()));
+  const [endDate, setEndDate] = useState<Date>(endOfDay(new Date()));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<Sale>>({});
 
