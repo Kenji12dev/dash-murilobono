@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { format } from "date-fns";
+import { format, startOfMonth, startOfDay, endOfDay } from "date-fns";
+import DateFilter from "@/components/dashboard/DateFilter";
 import { ptBR } from "date-fns/locale";
 import { useSales, Sale } from "@/context/SalesContext";
 import { useAuth } from "@/context/AuthContext";
