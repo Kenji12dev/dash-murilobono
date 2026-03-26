@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BarChart3, PlusCircle, Database, Columns3, Users, LogOut, Menu, X, UserCircle, Headset, CalendarDays, BrainCircuit, Contact } from "lucide-react";
+import { BarChart3, Database, Columns3, Users, LogOut, Menu, UserCircle, Headset, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
