@@ -61,7 +61,7 @@ const AppNav = ({ activeTab, onTabChange }: AppNavProps) => {
 
         {/* Desktop nav */}
         <nav className="hidden lg:flex items-center gap-1">
-          {tabs.map(({ id, label, icon: Icon, badge }) => (
+          {tabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => onTabChange(id)}
