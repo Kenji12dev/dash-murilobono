@@ -245,9 +245,9 @@ const PreSales = () => {
   // Build comparison chart data
   const appointmentChartData = useMemo(() => {
     const sdrNames = collaborators.map((c) => c.name);
-    const sdrCounts: Record<string, { total: number; pago: number; pendente: number; followUp: number; loss: number }> = {};
+    const sdrCounts: Record<string, { total: number; pago: number; pendente: number; followUp: number; loss: number; noShow: number; reembolsado: number }> = {};
     sdrNames.forEach((name) => {
-      sdrCounts[name] = { total: 0, pago: 0, pendente: 0, followUp: 0, loss: 0 };
+      sdrCounts[name] = { total: 0, pago: 0, pendente: 0, followUp: 0, loss: 0, noShow: 0, reembolsado: 0 };
     });
     filteredSales.forEach((sale) => {
       if (sdrCounts[sale.sdr]) {
@@ -257,6 +257,8 @@ const PreSales = () => {
         else if (status === "pendente") sdrCounts[sale.sdr].pendente++;
         else if (status === "follow up") sdrCounts[sale.sdr].followUp++;
         else if (status === "loss") sdrCounts[sale.sdr].loss++;
+        else if (status === "no show") sdrCounts[sale.sdr].noShow++;
+        else if (status === "reembolsado") sdrCounts[sale.sdr].reembolsado++;
       }
     });
     return sdrNames.map((name) => ({
@@ -266,6 +268,8 @@ const PreSales = () => {
       Pendente: sdrCounts[name]?.pendente || 0,
       "Follow Up": sdrCounts[name]?.followUp || 0,
       Loss: sdrCounts[name]?.loss || 0,
+      "No Show": sdrCounts[name]?.noShow || 0,
+      Reembolsado: sdrCounts[name]?.reembolsado || 0,
     }));
   }, [filteredSales, collaborators]);
 
@@ -458,13 +462,15 @@ const PreSales = () => {
                 <TableHead className="text-center">Pendentes</TableHead>
                 <TableHead className="text-center">Follow Up</TableHead>
                 <TableHead className="text-center">Loss</TableHead>
+                <TableHead className="text-center">No Show</TableHead>
+                <TableHead className="text-center">Reembolsado</TableHead>
                 <TableHead className="text-center">Taxa Conversão</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {collaborators.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={12} className="text-center text-muted-foreground py-10">
+                  <TableCell colSpan={14} className="text-center text-muted-foreground py-10">
                     Nenhum SDR cadastrado.
                   </TableCell>
                 </TableRow>
@@ -480,6 +486,8 @@ const PreSales = () => {
                   const pendente = appointments?.Pendente || 0;
                   const followUp = appointments?.["Follow Up"] || 0;
                   const loss = appointments?.Loss || 0;
+                  const noShow = appointments?.["No Show"] || 0;
+                  const reembolsado = appointments?.Reembolsado || 0;
                   const replyRate = conversations > 0 ? ((replies / conversations) * 100).toFixed(1) : "—";
                   const scheduleRate = replies > 0 ? ((calls / replies) * 100).toFixed(1) : "—";
                   const conversionRate = total > 0 ? ((pago / total) * 100).toFixed(1) : "—";
@@ -505,6 +513,8 @@ const PreSales = () => {
                       <TableCell className="text-center text-yellow-500 font-medium">{pendente}</TableCell>
                       <TableCell className="text-center text-blue-500 font-medium">{followUp}</TableCell>
                       <TableCell className="text-center text-destructive font-medium">{loss}</TableCell>
+                      <TableCell className="text-center text-orange-500 font-medium">{noShow}</TableCell>
+                      <TableCell className="text-center text-zinc-400 font-medium">{reembolsado}</TableCell>
                       <TableCell className="text-center">
                         <span className={conversionRate !== "—" ? "text-primary font-semibold" : "text-muted-foreground"}>
                           {conversionRate !== "—" ? `${conversionRate}%` : "—"}
