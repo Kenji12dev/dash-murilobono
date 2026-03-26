@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BarChart3, PlusCircle, Database, Columns3, Users, LogOut, Menu, X, UserCircle, Headset, CalendarDays, BrainCircuit, Contact } from "lucide-react";
+import { BarChart3, Database, Columns3, Users, LogOut, Menu, UserCircle, Headset, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,10 +9,9 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 interface AppNavProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
-  overdueLeadsCount?: number;
 }
 
-const AppNav = ({ activeTab, onTabChange, overdueLeadsCount = 0 }: AppNavProps) => {
+const AppNav = ({ activeTab, onTabChange }: AppNavProps) => {
   const { role, signOut, user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collaboratorType, setCollaboratorType] = useState<string | null>(null);
@@ -34,11 +33,7 @@ const AppNav = ({ activeTab, onTabChange, overdueLeadsCount = 0 }: AppNavProps) 
     { id: "kanban", label: "Fluxo de Status", icon: Columns3 },
     { id: "database", label: "Banco de Dados", icon: Database },
     { id: "pre-sales", label: "Pré-vendas", icon: Headset },
-    { id: "leads", label: "Leads", icon: Contact, badge: overdueLeadsCount },
     { id: "agenda", label: "Agenda", icon: CalendarDays },
-    ...(role === "admin" || collaboratorType === "sdr"
-      ? [{ id: "ai-analysis", label: "Análise IA", icon: BrainCircuit }]
-      : []),
     ...(role === "admin"
       ? [{ id: "collaborators", label: "Colaboradores", icon: Users }]
       : []),
@@ -66,7 +61,7 @@ const AppNav = ({ activeTab, onTabChange, overdueLeadsCount = 0 }: AppNavProps) 
 
         {/* Desktop nav */}
         <nav className="hidden lg:flex items-center gap-1">
-          {tabs.map(({ id, label, icon: Icon, badge }) => (
+          {tabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => onTabChange(id)}
@@ -79,11 +74,6 @@ const AppNav = ({ activeTab, onTabChange, overdueLeadsCount = 0 }: AppNavProps) 
             >
               <Icon className="h-4 w-4" />
               {label}
-              {badge != null && badge > 0 && (
-                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full h-4 min-w-[16px] flex items-center justify-center px-1">
-                  {badge}
-                </span>
-              )}
             </button>
           ))}
           <div className="ml-3 pl-3 border-l border-border flex items-center gap-2">
@@ -122,7 +112,7 @@ const AppNav = ({ activeTab, onTabChange, overdueLeadsCount = 0 }: AppNavProps) 
                 </div>
 
                 <nav className="flex-1 p-3 space-y-1">
-                  {tabs.map(({ id, label, icon: Icon, badge }) => (
+                  {tabs.map(({ id, label, icon: Icon }) => (
                     <button
                       key={id}
                       onClick={() => handleTabClick(id)}
@@ -135,11 +125,6 @@ const AppNav = ({ activeTab, onTabChange, overdueLeadsCount = 0 }: AppNavProps) 
                     >
                       <Icon className="h-4 w-4" />
                       {label}
-                      {badge != null && badge > 0 && (
-                        <span className="ml-auto bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full h-4 min-w-[16px] flex items-center justify-center px-1">
-                          {badge}
-                        </span>
-                      )}
                     </button>
                   ))}
                 </nav>
