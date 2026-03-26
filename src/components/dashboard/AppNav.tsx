@@ -33,11 +33,7 @@ const AppNav = ({ activeTab, onTabChange }: AppNavProps) => {
     { id: "kanban", label: "Fluxo de Status", icon: Columns3 },
     { id: "database", label: "Banco de Dados", icon: Database },
     { id: "pre-sales", label: "Pré-vendas", icon: Headset },
-    { id: "leads", label: "Leads", icon: Contact, badge: overdueLeadsCount },
     { id: "agenda", label: "Agenda", icon: CalendarDays },
-    ...(role === "admin" || collaboratorType === "sdr"
-      ? [{ id: "ai-analysis", label: "Análise IA", icon: BrainCircuit }]
-      : []),
     ...(role === "admin"
       ? [{ id: "collaborators", label: "Colaboradores", icon: Users }]
       : []),
