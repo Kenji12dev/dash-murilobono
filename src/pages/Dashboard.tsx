@@ -11,6 +11,7 @@ import PaymentDistribution from "@/components/dashboard/PaymentDistribution";
 import LeadSourceDistribution from "@/components/dashboard/LeadSourceDistribution";
 import StatusDistribution from "@/components/dashboard/StatusDistribution";
 import CallStatusChart from "@/components/dashboard/CallStatusChart";
+import SdrCloserDistribution from "@/components/dashboard/SdrCloserDistribution";
 import MonthlyGoals from "@/components/dashboard/MonthlyGoals";
 import { useDashboardMetrics, DashboardFilters } from "@/hooks/useDashboardMetrics";
 import { PAYMENT_METHOD_MAP, LEAD_SOURCE_MAP } from "@/data/mockData";
@@ -113,6 +114,7 @@ const Dashboard = ({ onGoToKanban }: { onGoToKanban: () => void }) => {
           onCloserClick={handleCloserClick}
           onSdrClick={handleSdrClick}
         />
+        <SdrCloserDistribution data={metrics.sdrCloserDistribution} />
         <PaymentDistribution
           data={metrics.paymentData}
           activePayment={filters.paymentMethod ? (PAYMENT_METHOD_MAP[filters.paymentMethod]?.label || filters.paymentMethod) : undefined}
