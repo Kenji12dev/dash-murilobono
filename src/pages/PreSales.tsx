@@ -550,6 +550,56 @@ const PreSales = () => {
         </CardContent>
       </Card>
 
+      {/* SDR → Closer Distribution */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            Distribuição por Closer — {filterLabel}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {collaborators.length === 0 ? (
+            <p className="text-muted-foreground text-sm text-center py-10">Nenhum SDR cadastrado.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {collaborators.map((collab) => {
+                const distribution = sdrCloserDistribution[collab.name] || [];
+                const totalCalls = distribution.reduce((sum, d) => sum + d.count, 0);
+                return (
+                  <div key={collab.id} className="border border-border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="font-semibold text-foreground text-sm">{collab.name}</p>
+                      <span className="text-xs text-muted-foreground">{totalCalls} calls</span>
+                    </div>
+                    {distribution.length === 0 ? (
+                      <p className="text-xs text-muted-foreground italic">Sem calls no período</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {distribution.map((d) => (
+                          <div key={d.closer} className="space-y-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-muted-foreground">{d.closer}</span>
+                              <span className="font-semibold text-foreground">{d.count} ({d.percentage}%)</span>
+                            </div>
+                            <div className="w-full bg-secondary rounded-full h-4 overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-primary transition-all duration-500"
+                                style={{ width: `${Math.max(d.percentage, 3)}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Goals Dialog */}
       <Dialog open={goalsDialogOpen} onOpenChange={setGoalsDialogOpen}>
         <DialogContent className="max-w-2xl">
