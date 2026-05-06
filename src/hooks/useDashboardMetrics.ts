@@ -250,6 +250,7 @@ export const useDashboardMetrics = (
       callStatusByCloser,
       closersList,
       sdrCloserDistribution,
+      lossReasonData,
     };
   }, [sales, startDate, endDate, filters]);
 };
