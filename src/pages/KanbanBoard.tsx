@@ -141,7 +141,10 @@ const KanbanBoard = () => {
     if (!draggedId) return;
     const sale = sales.find((s) => s.id === draggedId);
     if (sale && sale.status !== targetStatus) {
-      if (targetStatus === "Loss" || targetStatus === "No Show") {
+      if (targetStatus === "Loss") {
+        setLossDialog({ saleId: draggedId });
+        setLossReason(sale.lossReason || "");
+      } else if (targetStatus === "No Show") {
         updateSale(draggedId, { status: targetStatus });
         toast.success(`Venda movida para ${targetStatus}`);
       } else if (targetStatus === "Follow Up") {
