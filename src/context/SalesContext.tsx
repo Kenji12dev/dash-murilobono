@@ -18,6 +18,7 @@ export interface Sale {
   leadSource: string;
   downPayment?: number;
   notes: string;
+  lossReason?: string;
   hybridPayments?: HybridPayment[];
 }
 
@@ -59,6 +60,7 @@ const mapRow = (row: any): Sale => ({
   leadSource: row.lead_source || "",
   downPayment: row.down_payment != null ? Number(row.down_payment) : undefined,
   notes: row.notes || "",
+  lossReason: row.loss_reason || undefined,
   hybridPayments: row.hybrid_payments
     ? (typeof row.hybrid_payments === "string"
         ? JSON.parse(row.hybrid_payments)
@@ -166,6 +168,7 @@ export const SalesProvider = ({ children }: { children: ReactNode }) => {
         lead_source: sale.leadSource,
         down_payment: sale.downPayment ?? null,
         notes: sale.notes,
+        loss_reason: sale.lossReason ?? null,
         hybrid_payments: sale.hybridPayments ? JSON.stringify(sale.hybridPayments) : null,
       } as any)
       .select()
@@ -196,6 +199,7 @@ export const SalesProvider = ({ children }: { children: ReactNode }) => {
     if (updates.leadSource !== undefined) dbUpdates.lead_source = updates.leadSource;
     if (updates.downPayment !== undefined) dbUpdates.down_payment = updates.downPayment ?? null;
     if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+    if (updates.lossReason !== undefined) dbUpdates.loss_reason = updates.lossReason ?? null;
     if (updates.hybridPayments !== undefined) dbUpdates.hybrid_payments = updates.hybridPayments ? JSON.stringify(updates.hybridPayments) : null;
 
     const { error } = await supabase

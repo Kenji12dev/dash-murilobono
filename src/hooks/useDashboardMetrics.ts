@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useSales } from "@/context/SalesContext";
 import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { PAYMENT_METHOD_MAP, LEAD_SOURCE_MAP, CHART_COLORS, STATUS_COLOR_MAP, calculateHybridCaixa, calculateNetValue } from "@/data/mockData";
+import { PAYMENT_METHOD_MAP, LEAD_SOURCE_MAP, CHART_COLORS, STATUS_COLOR_MAP, calculateHybridCaixa, calculateNetValue, LOSS_REASON_COLOR_MAP } from "@/data/mockData";
 
 export interface DashboardFilters {
   closer?: string;
@@ -25,6 +25,7 @@ export interface DashboardMetrics {
   callStatusByCloser: Record<string, { name: string; count: number; color: string }[]>;
   closersList: string[];
   sdrCloserDistribution: Record<string, { closer: string; count: number; percentage: number }[]>;
+  lossReasonData: { name: string; count: number; percentage: number; color: string }[];
 }
 
 const STATUS_COLORS: Record<string, string> = Object.fromEntries(
@@ -220,6 +221,21 @@ export const useDashboardMetrics = (
         .sort((a, b) => b.count - a.count);
     });
 
+    // Loss reason distribution (only Loss sales in date range, respecting other filters)
+    const lossSales = applyFilters(dateFiltered).filter((s) => s.status === "Loss" && s.lossReason);
+    const lossMap = new Map<string, number>();
+    lossSales.forEach((s) => {
+      const reason = s.lossReason as string;
+      lossMap.set(reason, (lossMap.get(reason) || 0) + 1);
+    });
+    const totalLoss = lossSales.length || 1;
+    const lossReasonData = Array.from(lossMap.entries()).map(([name, count]) => ({
+      name,
+      count,
+      percentage: parseFloat(((count / totalLoss) * 100).toFixed(1)),
+      color: LOSS_REASON_COLOR_MAP[name] || CHART_COLORS[0],
+    }));
+
     return {
       faturamentoLiquido,
       caixaGerado,
@@ -234,6 +250,7 @@ export const useDashboardMetrics = (
       callStatusByCloser,
       closersList,
       sdrCloserDistribution,
+      lossReasonData,
     };
   }, [sales, startDate, endDate, filters]);
 };

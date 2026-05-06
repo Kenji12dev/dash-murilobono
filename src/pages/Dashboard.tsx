@@ -10,6 +10,7 @@ import TeamPerformance from "@/components/dashboard/TeamPerformance";
 import PaymentDistribution from "@/components/dashboard/PaymentDistribution";
 import LeadSourceDistribution from "@/components/dashboard/LeadSourceDistribution";
 import StatusDistribution from "@/components/dashboard/StatusDistribution";
+import LossReasonDistribution from "@/components/dashboard/LossReasonDistribution";
 import CallStatusChart from "@/components/dashboard/CallStatusChart";
 import SdrCloserDistribution from "@/components/dashboard/SdrCloserDistribution";
 import MonthlyGoals from "@/components/dashboard/MonthlyGoals";
@@ -125,6 +126,7 @@ const Dashboard = ({ onGoToKanban }: { onGoToKanban: () => void }) => {
           activeSource={filters.leadSource ? (LEAD_SOURCE_MAP[filters.leadSource]?.label || filters.leadSource) : undefined}
           onSourceClick={handleLeadSourceClick}
         />
+        <LossReasonDistribution data={metrics.lossReasonData} />
       </div>
     </div>
   );

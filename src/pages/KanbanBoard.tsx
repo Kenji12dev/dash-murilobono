@@ -9,7 +9,7 @@ import { Columns3, GripVertical, Plus, CalendarIcon, Save, X, ArrowRight, Trash2
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-import { PAYMENT_METHODS, LEAD_SOURCES, calculateNetValue, getFeeDescription, HybridPayment, calculateHybridNetValue, calculateHybridCaixa, STATUS_COLOR_MAP } from "@/data/mockData";
+import { PAYMENT_METHODS, LEAD_SOURCES, calculateNetValue, getFeeDescription, HybridPayment, calculateHybridNetValue, calculateHybridCaixa, STATUS_COLOR_MAP, LOSS_REASONS } from "@/data/mockData";
 import {
   Dialog,
   DialogContent,
@@ -97,6 +97,10 @@ const KanbanBoard = () => {
   const [followUpStartTime, setFollowUpStartTime] = useState("10:00");
   const [followUpEndTime, setFollowUpEndTime] = useState("11:00");
 
+  // Loss dialog
+  const [lossDialog, setLossDialog] = useState<{ saleId: string } | null>(null);
+  const [lossReason, setLossReason] = useState<string>("");
+
   // Detail dialog (editable)
   const [detailSale, setDetailSale] = useState<Sale | null>(null);
   const [editNotes, setEditNotes] = useState("");
@@ -137,7 +141,10 @@ const KanbanBoard = () => {
     if (!draggedId) return;
     const sale = sales.find((s) => s.id === draggedId);
     if (sale && sale.status !== targetStatus) {
-      if (targetStatus === "Loss" || targetStatus === "No Show") {
+      if (targetStatus === "Loss") {
+        setLossDialog({ saleId: draggedId });
+        setLossReason(sale.lossReason || "");
+      } else if (targetStatus === "No Show") {
         updateSale(draggedId, { status: targetStatus });
         toast.success(`Venda movida para ${targetStatus}`);
       } else if (targetStatus === "Follow Up") {
@@ -249,6 +256,19 @@ const KanbanBoard = () => {
     setFollowUpDate(new Date());
     setFollowUpStartTime("10:00");
     setFollowUpEndTime("11:00");
+  };
+
+  // Loss confirm
+  const handleLossConfirm = () => {
+    if (!lossDialog) return;
+    if (!lossReason) {
+      toast.error("Selecione o motivo do Loss.");
+      return;
+    }
+    updateSale(lossDialog.saleId, { status: "Loss", lossReason });
+    toast.success(`Movido para Loss — ${lossReason}`);
+    setLossDialog(null);
+    setLossReason("");
   };
 
   // Delete
@@ -390,6 +410,7 @@ const KanbanBoard = () => {
       "Valor Líquido (R$)",
       "Valor de Entrada (R$)",
       "Pagamentos Híbridos",
+      "Motivo do Loss",
       "Briefing / Observações",
     ];
 
@@ -423,6 +444,7 @@ const KanbanBoard = () => {
           formatBRL(s.netValue || 0),
           s.downPayment ? formatBRL(s.downPayment) : "",
           hybrid,
+          s.lossReason || "",
           s.notes || "",
         ].map(escape).join(";");
       });
@@ -578,6 +600,11 @@ const KanbanBoard = () => {
                               <span className="text-[10px] text-muted-foreground">{sale.paymentMethod}</span>
                             )}
                           </div>
+                          {sale.status === "Loss" && sale.lossReason && (
+                            <p className="text-[10px] text-red-500 mt-1 font-medium truncate">
+                              ⚠ {sale.lossReason}
+                            </p>
+                          )}
                           {sale.notes && (
                             <p className="text-[10px] text-muted-foreground mt-1 truncate italic">
                               📝 {sale.notes}
@@ -953,7 +980,35 @@ const KanbanBoard = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation */}
+      {/* Loss Reason Dialog */}
+      <Dialog open={!!lossDialog} onOpenChange={(open) => { if (!open) { setLossDialog(null); setLossReason(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Motivo do Loss</DialogTitle>
+            <DialogDescription>Selecione o motivo da perda do lead.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <Select value={lossReason} onValueChange={setLossReason}>
+              <SelectTrigger><SelectValue placeholder="Selecione o motivo" /></SelectTrigger>
+              <SelectContent>
+                {LOSS_REASONS.map((r) => (
+                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex gap-2">
+              <Button onClick={handleLossConfirm} className="flex-1 font-semibold">
+                <Save className="h-4 w-4 mr-1" /> Confirmar
+              </Button>
+              <Button variant="ghost" onClick={() => { setLossDialog(null); setLossReason(""); }}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

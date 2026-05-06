@@ -136,6 +136,22 @@ export const LEAD_SOURCES = [
 
 export type LeadSource = (typeof LEAD_SOURCES)[number];
 
+export const LOSS_REASONS = [
+  "Sem dinheiro",
+  "Não sentiu confiança",
+  "Kitou no pagamento",
+  "Desqualificado",
+] as const;
+
+export type LossReason = (typeof LOSS_REASONS)[number];
+
+export const LOSS_REASON_COLOR_MAP: Record<string, string> = {
+  "Sem dinheiro": CHART_COLORS[0],
+  "Não sentiu confiança": CHART_COLORS[1],
+  "Kitou no pagamento": CHART_COLORS[2],
+  "Desqualificado": CHART_COLORS[3],
+};
+
 // Unified status colors used across Kanban, Dashboard charts, and Sales Database
 export const STATUS_COLOR_MAP: Record<string, { hsl: string; textClass: string; borderBgClass: string }> = {
   Pendente:    { hsl: "hsl(48, 96%, 53%)",   textClass: "text-yellow-500",  borderBgClass: "border-yellow-500/60 bg-yellow-500/5" },
