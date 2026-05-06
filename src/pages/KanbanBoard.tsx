@@ -975,7 +975,35 @@ const KanbanBoard = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation */}
+      {/* Loss Reason Dialog */}
+      <Dialog open={!!lossDialog} onOpenChange={(open) => { if (!open) { setLossDialog(null); setLossReason(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Motivo do Loss</DialogTitle>
+            <DialogDescription>Selecione o motivo da perda do lead.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <Select value={lossReason} onValueChange={setLossReason}>
+              <SelectTrigger><SelectValue placeholder="Selecione o motivo" /></SelectTrigger>
+              <SelectContent>
+                {LOSS_REASONS.map((r) => (
+                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex gap-2">
+              <Button onClick={handleLossConfirm} className="flex-1 font-semibold">
+                <Save className="h-4 w-4 mr-1" /> Confirmar
+              </Button>
+              <Button variant="ghost" onClick={() => { setLossDialog(null); setLossReason(""); }}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
