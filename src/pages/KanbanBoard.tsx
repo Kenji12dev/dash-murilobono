@@ -390,8 +390,11 @@ const KanbanBoard = () => {
   };
 
   // Export filtered leads to CSV (includes briefing/notes)
-  const handleExportCSV = () => {
-    if (filteredSales.length === 0) {
+  const handleExportCSV = (statusFilter?: string) => {
+    const source = statusFilter
+      ? filteredSales.filter((s) => s.status === statusFilter)
+      : filteredSales;
+    if (source.length === 0) {
       toast.error("Nenhum lead para exportar no período selecionado.");
       return;
     }
