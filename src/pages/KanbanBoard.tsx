@@ -390,8 +390,11 @@ const KanbanBoard = () => {
   };
 
   // Export filtered leads to CSV (includes briefing/notes)
-  const handleExportCSV = () => {
-    if (filteredSales.length === 0) {
+  const handleExportCSV = (statusFilter?: string) => {
+    const source = statusFilter
+      ? filteredSales.filter((s) => s.status === statusFilter)
+      : filteredSales;
+    if (source.length === 0) {
       toast.error("Nenhum lead para exportar no período selecionado.");
       return;
     }
@@ -422,7 +425,7 @@ const KanbanBoard = () => {
       return `"${s.replace(/"/g, '""').replace(/\r?\n/g, " ")}"`;
     };
 
-    const rows = filteredSales
+    const rows = source
       .slice()
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .map((s) => {
@@ -453,14 +456,15 @@ const KanbanBoard = () => {
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    const fileName = `leads_${format(startDate, "dd-MM-yyyy")}_a_${format(endDate, "dd-MM-yyyy")}.csv`;
+    const slug = statusFilter ? statusFilter.toLowerCase().replace(/\s+/g, "-") : "todos";
+    const fileName = `leads_${slug}_${format(startDate, "dd-MM-yyyy")}_a_${format(endDate, "dd-MM-yyyy")}.csv`;
     link.href = url;
     link.setAttribute("download", fileName);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    toast.success(`${filteredSales.length} lead(s) exportado(s)`);
+    toast.success(`${source.length} lead(s) exportado(s)`);
   };
 
   const moveSale = moveDialog ? sales.find((s) => s.id === moveDialog.saleId) : null;
@@ -480,7 +484,7 @@ const KanbanBoard = () => {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={handleExportCSV} size="sm" variant="outline" className="font-semibold">
+            <Button onClick={() => handleExportCSV()} size="sm" variant="outline" className="font-semibold">
               <Download className="h-4 w-4 mr-1" />
               Exportar CSV
             </Button>
@@ -557,9 +561,21 @@ const KanbanBoard = () => {
               >
                 <div className="flex items-center justify-between mb-3 px-1">
                   <h2 className="text-sm font-semibold text-foreground">{col.label}</h2>
-                  <span className="text-xs font-medium text-muted-foreground bg-secondary rounded-full px-2 py-0.5">
-                    {items.length}
-                  </span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs font-medium text-muted-foreground bg-secondary rounded-full px-2 py-0.5">
+                      {items.length}
+                    </span>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6"
+                      title={`Exportar ${col.label} (CSV)`}
+                      onClick={(e) => { e.stopPropagation(); handleExportCSV(col.id); }}
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
