@@ -425,7 +425,7 @@ const KanbanBoard = () => {
       return `"${s.replace(/"/g, '""').replace(/\r?\n/g, " ")}"`;
     };
 
-    const rows = filteredSales
+    const rows = source
       .slice()
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .map((s) => {
@@ -456,14 +456,15 @@ const KanbanBoard = () => {
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    const fileName = `leads_${format(startDate, "dd-MM-yyyy")}_a_${format(endDate, "dd-MM-yyyy")}.csv`;
+    const slug = statusFilter ? statusFilter.toLowerCase().replace(/\s+/g, "-") : "todos";
+    const fileName = `leads_${slug}_${format(startDate, "dd-MM-yyyy")}_a_${format(endDate, "dd-MM-yyyy")}.csv`;
     link.href = url;
     link.setAttribute("download", fileName);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    toast.success(`${filteredSales.length} lead(s) exportado(s)`);
+    toast.success(`${source.length} lead(s) exportado(s)`);
   };
 
   const moveSale = moveDialog ? sales.find((s) => s.id === moveDialog.saleId) : null;
