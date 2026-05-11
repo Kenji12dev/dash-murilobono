@@ -484,7 +484,7 @@ const KanbanBoard = () => {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={handleExportCSV} size="sm" variant="outline" className="font-semibold">
+            <Button onClick={() => handleExportCSV()} size="sm" variant="outline" className="font-semibold">
               <Download className="h-4 w-4 mr-1" />
               Exportar CSV
             </Button>
