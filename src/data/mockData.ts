@@ -141,6 +141,7 @@ export const LOSS_REASONS = [
   "Não sentiu confiança",
   "Kitou no pagamento",
   "Desqualificado",
+  "FUP perdido",
 ] as const;
 
 export type LossReason = (typeof LOSS_REASONS)[number];
@@ -150,6 +151,7 @@ export const LOSS_REASON_COLOR_MAP: Record<string, string> = {
   "Não sentiu confiança": CHART_COLORS[1],
   "Kitou no pagamento": CHART_COLORS[2],
   "Desqualificado": CHART_COLORS[3],
+  "FUP perdido": CHART_COLORS[4],
 };
 
 // Unified status colors used across Kanban, Dashboard charts, and Sales Database
