@@ -44,17 +44,17 @@ const RevenueChart = ({ data }: RevenueChartProps) => (
           <AreaChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(190, 90%, 55%)" stopOpacity={0.4} />
-                <stop offset="100%" stopColor="hsl(168, 75%, 48%)" stopOpacity={0.02} />
+                <stop offset="0%" stopColor="hsl(315, 85%, 62%)" stopOpacity={0.4} />
+                <stop offset="100%" stopColor="hsl(265, 78%, 64%)" stopOpacity={0.02} />
               </linearGradient>
               <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="hsl(190, 90%, 55%)" />
-                <stop offset="100%" stopColor="hsl(168, 75%, 48%)" />
+                <stop offset="0%" stopColor="hsl(315, 85%, 62%)" />
+                <stop offset="100%" stopColor="hsl(265, 78%, 64%)" />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(200, 14%, 16%)" vertical={false} />
-            <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: "hsl(200, 12%, 58%)", fontSize: 12 }} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fill: "hsl(200, 12%, 58%)", fontSize: 12 }} tickFormatter={formatCurrency} />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(270, 14%, 17%)" vertical={false} />
+            <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: "hsl(275, 12%, 60%)", fontSize: 12 }} />
+            <YAxis axisLine={false} tickLine={false} tick={{ fill: "hsl(275, 12%, 60%)", fontSize: 12 }} tickFormatter={formatCurrency} />
             <Tooltip content={<CustomTooltip />} />
             <Area type="monotone" dataKey="revenue" stroke="url(#lineGradient)" strokeWidth={2.5} fill="url(#revenueGradient)" />
           </AreaChart>
