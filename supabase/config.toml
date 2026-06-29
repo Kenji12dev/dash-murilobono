@@ -1,4 +1,4 @@
-project_id = "vdjcdvhjcagqwkhgaivs"
+project_id = "wonrnuesgjygdnqbofes"
 
 [functions.google-calendar-auth]
 verify_jwt = false
@@ -10,7 +10,4 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.google-calendar-manage]
-verify_jwt = false
-
-[functions.ai-sdr-coach]
 verify_jwt = false
