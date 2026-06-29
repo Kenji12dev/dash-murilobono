@@ -140,12 +140,12 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- Seed existing collaborators
-INSERT INTO public.collaborators (name, type, commission_rate) VALUES
-  ('Andre Kenji', 'closer', 0.30),
-  ('Joao Pedro', 'closer', 0.05),
-  ('Caio Alves', 'closer', 0.05),
-  ('Joao Vittor', 'closer', 0.05),
-  ('Yan Pedro', 'closer', 0.05),
-  ('Harumi', 'sdr', 0.03),
-  ('Kaique', 'sdr', 0.03);
+-- Seed existing collaborators (REMOVIDO no dash-penido para nascer vazio)
+-- INSERT INTO public.collaborators (name, type, commission_rate) VALUES
+--   ('Andre Kenji', 'closer', 0.30),
+--   ('Joao Pedro', 'closer', 0.05),
+--   ('Caio Alves', 'closer', 0.05),
+--   ('Joao Vittor', 'closer', 0.05),
+--   ('Yan Pedro', 'closer', 0.05),
+--   ('Harumi', 'sdr', 0.03),
+--   ('Kaique', 'sdr', 0.03);
