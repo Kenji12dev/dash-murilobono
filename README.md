@@ -1,4 +1,4 @@
-# Dashboard Penido
+# Dashboard Murilo Bono
 
 Dashboard de gestão comercial (leads, vendas, colaboradores e metas).
 
