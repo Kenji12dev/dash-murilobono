@@ -6,26 +6,26 @@
 
 @layer base {
   :root {
-    --background: 270 18% 7%;
-    --foreground: 280 15% 95%;
+    --background: 160 18% 7%;
+    --foreground: 150 14% 95%;
 
-    --card: 270 16% 10%;
-    --card-foreground: 280 15% 95%;
+    --card: 160 16% 10%;
+    --card-foreground: 150 14% 95%;
 
-    --popover: 270 16% 10%;
-    --popover-foreground: 280 15% 95%;
+    --popover: 160 16% 10%;
+    --popover-foreground: 150 14% 95%;
 
-    --primary: 315 85% 62%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 152 72% 45%;
+    --primary-foreground: 160 60% 6%;
 
-    --secondary: 270 14% 15%;
-    --secondary-foreground: 280 15% 85%;
+    --secondary: 160 14% 15%;
+    --secondary-foreground: 150 14% 85%;
 
-    --muted: 270 12% 17%;
-    --muted-foreground: 275 12% 60%;
+    --muted: 160 12% 17%;
+    --muted-foreground: 155 12% 60%;
 
-    --accent: 265 78% 64%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 95 72% 50%;
+    --accent-foreground: 120 60% 6%;
 
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
@@ -36,24 +36,24 @@
     --warning: 45 93% 58%;
     --warning-foreground: 0 0% 0%;
 
-    --border: 270 14% 17%;
-    --input: 270 14% 17%;
-    --ring: 315 85% 62%;
+    --border: 160 14% 17%;
+    --input: 160 14% 17%;
+    --ring: 152 72% 45%;
 
     --radius: 0.75rem;
 
-    --chart-1: 315 85% 62%;
-    --chart-2: 265 78% 64%;
-    --chart-3: 215 85% 62%;
-    --chart-4: 168 70% 50%;
+    --chart-1: 152 72% 45%;
+    --chart-2: 95 72% 50%;
+    --chart-3: 175 70% 45%;
+    --chart-4: 200 80% 55%;
     --chart-5: 45 90% 60%;
 
-    --glass-bg: 270 18% 11%;
-    --glass-border: 270 14% 20%;
+    --glass-bg: 160 18% 11%;
+    --glass-border: 160 14% 20%;
     --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 
-    --gradient-primary: linear-gradient(135deg, hsl(315, 85%, 62%), hsl(265, 78%, 64%));
-    --gradient-primary-soft: linear-gradient(135deg, hsl(315, 85%, 62%, 0.15), hsl(265, 78%, 64%, 0.15));
+    --gradient-primary: linear-gradient(135deg, hsl(152, 72%, 45%), hsl(95, 72%, 50%));
+    --gradient-primary-soft: linear-gradient(135deg, hsl(152, 72%, 45%, 0.15), hsl(95, 72%, 50%, 0.15));
   }
 }
 
