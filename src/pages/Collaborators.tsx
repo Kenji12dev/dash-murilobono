@@ -81,6 +81,8 @@ const Collaborators = () => {
   const [newCollabEmail, setNewCollabEmail] = useState("");
   const [newCollabPassword, setNewCollabPassword] = useState("");
   const [newCollabRole, setNewCollabRole] = useState<string>("colaborador");
+  const [newCollabMode, setNewCollabMode] = useState<"new" | "existing">("new");
+  const [newCollabUserId, setNewCollabUserId] = useState("");
   const [addCollabLoading, setAddCollabLoading] = useState(false);
 
   // Delete confirmation
@@ -208,14 +210,57 @@ const Collaborators = () => {
     }
   };
 
+  const resetAddCollab = () => {
+    setAddCollabOpen(false);
+    setNewCollabName("");
+    setNewCollabType("closer");
+    setNewCollabRate("");
+    setNewCollabFixedSalary("");
+    setNewCollabEmail("");
+    setNewCollabPassword("");
+    setNewCollabRole("colaborador");
+    setNewCollabMode("new");
+    setNewCollabUserId("");
+  };
+
   const handleAddCollab = async () => {
-    if (!newCollabName || !newCollabType || !newCollabEmail || !newCollabPassword) {
-      toast.error("Preencha todos os campos obrigatórios.");
-      return;
-    }
     const rate = parseFloat(newCollabRate) / 100;
     if (isNaN(rate) || rate < 0 || rate > 1) {
       toast.error("Taxa inválida (0-100%)");
+      return;
+    }
+
+    // Link an existing user (who already has access) to a new collaborator record
+    if (newCollabMode === "existing") {
+      if (!newCollabName || !newCollabType || !newCollabUserId) {
+        toast.error("Preencha o nome, o tipo e selecione o usuário.");
+        return;
+      }
+      setAddCollabLoading(true);
+      const { error: collabError } = await supabase
+        .from("collaborators")
+        .insert({
+          name: newCollabName.trim(),
+          type: newCollabType,
+          commission_rate: rate,
+          fixed_salary: parseFloat(newCollabFixedSalary) || 0,
+          user_id: newCollabUserId,
+        });
+      setAddCollabLoading(false);
+      if (collabError) {
+        toast.error("Erro ao vincular colaborador: " + collabError.message);
+      } else {
+        toast.success("Colaborador vinculado com sucesso!");
+        resetAddCollab();
+        fetchCollaborators();
+        refreshCollaborators();
+      }
+      return;
+    }
+
+    // Create a brand new user account + collaborator record
+    if (!newCollabName || !newCollabType || !newCollabEmail || !newCollabPassword) {
+      toast.error("Preencha todos os campos obrigatórios.");
       return;
     }
     if (newCollabPassword.length < 6) {
@@ -249,14 +294,7 @@ const Collaborators = () => {
       toast.error("Usuário criado, mas erro ao adicionar colaborador: " + collabError.message);
     } else {
       toast.success("Colaborador e usuário criados com sucesso!");
-      setAddCollabOpen(false);
-      setNewCollabName("");
-      setNewCollabType("closer");
-      setNewCollabRate("");
-      setNewCollabFixedSalary("");
-      setNewCollabEmail("");
-      setNewCollabPassword("");
-      setNewCollabRole("colaborador");
+      resetAddCollab();
       fetchCollaborators();
       refreshCollaborators();
     }
@@ -398,7 +436,7 @@ const Collaborators = () => {
             </h1>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button onClick={() => setAddCollabOpen(true)} size="sm" variant="outline" className="w-full sm:w-auto">
+            <Button onClick={() => { setAddCollabOpen(true); fetchUsers(); }} size="sm" variant="outline" className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-1" />
               Novo Colaborador
             </Button>
@@ -716,9 +754,19 @@ const Collaborators = () => {
         <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Novo Colaborador</DialogTitle>
-            <DialogDescription>Cria o colaborador e o acesso ao sistema de uma vez.</DialogDescription>
+            <DialogDescription>Crie um novo acesso ou vincule um colaborador a um usuário que já existe.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground">Acesso</Label>
+              <Select value={newCollabMode} onValueChange={(v) => setNewCollabMode(v as "new" | "existing")}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">Criar novo acesso</SelectItem>
+                  <SelectItem value="existing">Vincular usuário existente</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-muted-foreground">Nome</Label>
               <Input value={newCollabName} onChange={(e) => setNewCollabName(e.target.value)} placeholder="Nome completo" />
@@ -742,27 +790,55 @@ const Collaborators = () => {
               <Input type="number" min="0" step="100" value={newCollabFixedSalary} onChange={(e) => setNewCollabFixedSalary(e.target.value)} placeholder="Ex: 2000" />
             </div>
             <div className="h-px bg-border" />
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Acesso ao Sistema</p>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-muted-foreground">Email</Label>
-              <Input type="email" value={newCollabEmail} onChange={(e) => setNewCollabEmail(e.target.value)} placeholder="email@exemplo.com" />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-muted-foreground">Senha</Label>
-              <Input type="password" value={newCollabPassword} onChange={(e) => setNewCollabPassword(e.target.value)} placeholder="Mínimo 6 caracteres" />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-muted-foreground">Tipo de Acesso</Label>
-              <Select value={newCollabRole} onValueChange={setNewCollabRole}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="colaborador">Colaborador</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {newCollabMode === "existing" ? (
+              <>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Usuário existente</p>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-muted-foreground">Usuário</Label>
+                  <Select
+                    value={newCollabUserId}
+                    onValueChange={(v) => {
+                      setNewCollabUserId(v);
+                      const u = usersList.find((x) => x.id === v);
+                      if (u && !newCollabName.trim()) setNewCollabName(u.display_name);
+                    }}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Selecione um usuário" /></SelectTrigger>
+                    <SelectContent>
+                      {usersList.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.display_name} ({u.email})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Acesso ao Sistema</p>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-muted-foreground">Email</Label>
+                  <Input type="email" value={newCollabEmail} onChange={(e) => setNewCollabEmail(e.target.value)} placeholder="email@exemplo.com" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-muted-foreground">Senha</Label>
+                  <Input type="password" value={newCollabPassword} onChange={(e) => setNewCollabPassword(e.target.value)} placeholder="Mínimo 6 caracteres" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-muted-foreground">Tipo de Acesso</Label>
+                  <Select value={newCollabRole} onValueChange={setNewCollabRole}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="colaborador">Colaborador</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
             <Button onClick={handleAddCollab} disabled={addCollabLoading} className="w-full">
-              {addCollabLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><UserPlus className="h-4 w-4 mr-1" /> Criar Colaborador</>}
+              {addCollabLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><UserPlus className="h-4 w-4 mr-1" /> {newCollabMode === "existing" ? "Vincular Colaborador" : "Criar Colaborador"}</>}
             </Button>
           </div>
         </DialogContent>
